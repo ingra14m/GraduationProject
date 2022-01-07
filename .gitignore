@@ -1,2 +1,8 @@
 .idea
 models/__pycache__/
+models/FastGCN/script/__pycache__/
+models/GAT/script/__pycache__/
+models/GCN/script/__pycache__/
+models/GRAND/script/__pycache__/
+models/GraphSAGE/script/__pycache__/
+models/FastGCN/script/__pycache__/

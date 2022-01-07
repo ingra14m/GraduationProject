@@ -47,18 +47,17 @@ class Dataset(object):
         assert data in ['cora', 'pubmed', 'citeseer'], 'uknown dataset'
 
         self.data = data
-        self.data_dir = os.path.join(dataset_root, data)
+        self.data_dir = os.path.join(dataset_root, data)   # Get the Data
 
         # 预处理数据集不存在或更新现有数据集
         print('Downloading and Preprocessing [{}] Dataset ...'.format(data.upper()))
-        self.__download_data()
+        self.__download_data()    # download dataset
         self.data = self.__process_data()
 
         return
 
     # ------------------------------------------------------------------------
-    # 下载数据集
-
+    # 下载数据集，如果本身已经存在是不会有影响的
     def __download_data(self):
         """下载原始数据集
 
@@ -66,7 +65,7 @@ class Dataset(object):
 
         """
 
-        # 生成self.data_dir文件夹
+        # 生成self.data_dir文件夹，同时检查是否已经存在这个目录
         create_dir(self.data_dir)
 
         for name in self.files:

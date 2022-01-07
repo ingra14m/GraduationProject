@@ -3,7 +3,6 @@ from script.prepare import prepare
 from script.utils import load_config
 from script.pipeline import Pipeline
 
-
 def train_and_test(data, dataset_root, config):
     """模型训练和测试
 
@@ -35,7 +34,7 @@ def train_and_test(data, dataset_root, config):
 if __name__ == '__main__':
 
     # 数据集根目录
-    dataset_root = '../../Dataset'
+    dataset_root = 'data'
 
     # 加载全局配置
     config = load_config(config_file='config.yaml')
