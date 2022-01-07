@@ -16,7 +16,7 @@ cora:      # 使用Cora数据集训练模型
         output_dim:   7             # 节点类别个数
     hyper:                        # 训练超参数
         lr:           0.005         # 优化器初始学习率
-        epochs:       1000          # 训练轮次
+        epochs:       100          # 训练轮次 orgin is 1000
         patience:     100           # 早停轮次
         weight_decay: 0.0005        # 优化器权重衰减
 

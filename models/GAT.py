@@ -1,2 +1,0 @@
-def PrintHello():
-    print("nbnb")

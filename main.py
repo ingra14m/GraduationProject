@@ -1,8 +1,11 @@
 import torch
 import taichi as ti
+import sys
+import argparse
 
-# import models.GAT
-from models import GAT
+if __name__ == "__main__":
+    for i in range(1, len(sys.argv)):
+        print(sys.argv[i])
 
-GAT.PrintHello()
-# print("hhh")
+
+    # print(sys.argv)
