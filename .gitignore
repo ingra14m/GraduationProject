@@ -6,3 +6,8 @@ models/GCN/script/__pycache__/
 models/GRAND/script/__pycache__/
 models/GraphSAGE/script/__pycache__/
 models/FastGCN/script/__pycache__/
+.DS_Store
+Graph_Model/.DS_Store
+data/.DS_Store
+data/TWOSIDES/
+models/.DS_Store

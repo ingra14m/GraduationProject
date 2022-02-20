@@ -1,0 +1,10 @@
+Experiment 1 ---------- delete 20%
+Experiment 1 ---------- delete 20%
+Search Stage:
+Epoch 00000 | Loss: 1.946 | train acc: 0.171 | val acc: 0.134 (best 0.000) | test acc: 0.111 (best 0.000) | Time(s) 0.3788
+Epoch 00005 | Loss: 1.912 | train acc: 0.193 | val acc: 0.380 (best 0.000) | test acc: 0.384 (best 0.000) | Time(s) 0.3597
+Epoch 00010 | Loss: 1.861 | train acc: 0.179 | val acc: 0.354 (best 0.000) | test acc: 0.359 (best 0.000) | Time(s) 0.3547
+Epoch 00015 | Loss: 1.794 | train acc: 0.171 | val acc: 0.352 (best 0.000) | test acc: 0.353 (best 0.000) | Time(s) 0.3514
+Epoch 00020 | Loss: 1.715 | train acc: 0.193 | val acc: 0.374 (best 0.000) | test acc: 0.377 (best 0.000) | Time(s) 0.3472
+Epoch 00025 | Loss: 1.628 | train acc: 0.286 | val acc: 0.430 (best 0.000) | test acc: 0.424 (best 0.000) | Time(s) 0.3425
+Epoch 00030 | Loss: 1.536 | train acc: 0.364 | val acc: 0.494 (best 0.000) | test acc: 0.489 (best 0.000) | Time(s) 0.3888
