@@ -1,4 +1,4 @@
-"""SAGPool训练与预测
+"""MinCutPool训练与预测
 """
 
 
@@ -9,25 +9,24 @@ import numpy as np
 import torch.nn as nn
 import torch.optim as optim
 
-from .model import SAGPoolG, SAGPoolH
+from Graph_Model.MinCutPool.script.model import MinCutPoolModel
 from sklearn.metrics import accuracy_score
 from torch_geometric.data import DataLoader
 
 
 class Pipeline(object):
-    """SAGPool训练与预测
+    """MinCutPool训练与预测
     """
 
-    def __init__(self, model_name, **params):
+    def __init__(self, **params):
         """SAGPool训练与预测
 
-            加载SAGPool模型, 生成训练必要组件实例
+            加载MinCutPool模型, 生成训练必要组件实例
 
             Input:
             ------
             params: dict, 模型参数和超参数, 格式为:
                     {
-                        'device': 'cpu',
                         'random_state': 42,
                         'split': {
                             'test_prop': 0.2,
@@ -36,26 +35,25 @@ class Pipeline(object):
                         'model': {
                             'input_dim': 89,
                             'output_dim': 2,
-                            'hidden_dim': 64,
+                            'hidden_dim': 16,
                             'use_bias': True,
-                            'dropout': 0.5,
-                            'keep_ratio': 0.5
+                            'dropout': 0.2,
+                            'aggregate': 'sum'
                         },
                         'hyper': {
-                            'lr': 3e-3,
-                            'epochs': 1000,
-                            'patience': 100,
-                            'batch_size': 64,
+                            'lr': 1e-3,
+                            'epochs': 50,
+                            'patience': 50,
+                            'batch_size': 8,
                             'weight_decay': 5e-4
                         }
                     }
 
         """
 
-        # 使用的计算设备, 使用cpu时实验结果可复现
-        self.device = params['device']
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.__init_environment(params['random_state'])
-        self.__build_model(model_name, **params['model'])
+        self.__build_model(**params['model'])
         self.__build_components(**params['hyper'])
 
         return
@@ -77,7 +75,7 @@ class Pipeline(object):
 
         return
 
-    def __build_model(self, model_name, **model_params):
+    def __build_model(self, **model_params):
         """加载模型
 
             Input:
@@ -86,12 +84,8 @@ class Pipeline(object):
 
         """
 
-        # 选择使用的模型结构
-        assert model_name in ['SAGPoolG', 'SAGPoolH']
-        model_class = SAGPoolG if model_name == 'SAGPoolG' else SAGPoolH
-
         # 加载模型
-        self.model = model_class(**model_params)
+        self.model = MinCutPoolModel(**model_params)
         self.model.to(self.device)
 
         return
@@ -156,10 +150,11 @@ class Pipeline(object):
             for i, data in enumerate(train_loader):
                 # 模型输出
                 data = data.to(self.device)
-                logits = self.model(data)
+                logits, pool_loss = self.model(data)
 
                 # 计算损失函数
                 loss = self.criterion(logits, data.y)
+                loss += pool_loss
                 epoch_losses.append(loss.item())
 
                 # 反向传播
@@ -231,12 +226,14 @@ class Pipeline(object):
         for i, data in enumerate(eval_loader):
             # 模型输出
             data = data.to(self.device)
-            logits = self.model(data)
+            logits, pool_loss = self.model(data)
             predict_y = logits.max(1)[1]
+            loss = self.criterion(logits, data.y)
+            loss += pool_loss
 
             y_true.append(predict_y.cpu().numpy()[0])
             y_pred.append(data.y.cpu().numpy()[0])
-            losses.append(self.criterion(logits, data.y).item())
+            losses.append(loss.item())
 
         # 计算所有样本的平均损失
         loss = np.mean(losses)

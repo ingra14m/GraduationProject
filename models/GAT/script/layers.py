@@ -11,11 +11,11 @@ import torch.nn as nn
 
 
 class GraphAttentionLayer(nn.Module):
-    """Graph Attention层 (dense input)
+    """Graph_Model Attention层 (dense input)
     """
 
     def __init__(self, input_dim, output_dim, dropout, alpha, bias=True):
-        """Graph Attention层 (dense input)
+        """Graph_Model Attention层 (dense input)
 
             Inputs:
             -------
@@ -65,7 +65,7 @@ class GraphAttentionLayer(nn.Module):
         return
 
     def forward(self, X, edges):
-        """Graph Attention层 (dense input) 前馈
+        """Graph_Model Attention层 (dense input) 前馈
 
             Inputs:
             -------
@@ -107,11 +107,11 @@ class GraphAttentionLayer(nn.Module):
 
 
 class SparseGraphAttentionLayer(nn.Module):
-    """Graph Attention层 (sparse input)
+    """Graph_Model Attention层 (sparse input)
     """
 
     def __init__(self, input_dim, output_dim, dropout, alpha, bias=True):
-        """Graph Attention层 (sparse input)
+        """Graph_Model Attention层 (sparse input)
 
             Inputs:
             -------
@@ -161,7 +161,7 @@ class SparseGraphAttentionLayer(nn.Module):
         return
 
     def forward(self, X, edges):
-        """Graph Attention层 (sparse input) 前馈
+        """Graph_Model Attention层 (sparse input) 前馈
 
             Inputs:
             -------

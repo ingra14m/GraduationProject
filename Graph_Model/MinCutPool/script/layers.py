@@ -79,7 +79,7 @@ class GraphConvolution(nn.Module):
 class DenseGraphConvolution(nn.Module):
     """DenseGraphConv层
 
-        Weisfeiler and Leman Go Neural: Higher-order Graph Neural Networks
+        Weisfeiler and Leman Go Neural: Higher-order Graph_Model Neural Networks
         https://arxiv.org/pdf/1810.02244.pdf
 
     """

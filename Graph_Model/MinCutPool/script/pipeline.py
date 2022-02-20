@@ -9,7 +9,8 @@ import numpy as np
 import torch.nn as nn
 import torch.optim as optim
 
-from .model import MinCutPoolModel
+# 应该优先相对路径，再找全路径
+from model import MinCutPoolModel
 from sklearn.metrics import accuracy_score
 from torch_geometric.data import DataLoader
 

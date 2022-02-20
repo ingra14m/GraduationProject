@@ -31,9 +31,7 @@ def train_and_test(data, dataset_root, config):
 
     return
 
-
-if __name__ == '__main__':
-
+def main():
     # 数据集根目录
     dataset_root = '../../Dataset'
 
@@ -51,3 +49,7 @@ if __name__ == '__main__':
     # 使用Pubmed数据集训练和测试模型
     train_and_test('pubmed', dataset_root, config)
     # Pubmed Test Accuracy: 0.778
+
+if __name__ == '__main__':
+    main()
+
