@@ -1,4 +1,6 @@
 import torch
+
+import torch.nn as nn
 import taichi as ti
 import sys
 import argparse
@@ -32,4 +34,4 @@ if __name__ == "__main__":
         FASTGCN_main.main()
 
 
-
+nn.LSTM()
