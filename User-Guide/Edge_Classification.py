@@ -68,7 +68,7 @@ class Model(nn.Module):
     def __init__(self, in_features, hidden_features, out_features):
         super().__init__()
         self.sage = SAGE(in_features, hidden_features, out_features)
-        self.pred = DotProductPredictor()
+        self.pred = DotProductPredictor()   # 边回归问题
 
     def forward(self, g, x):
         h = self.sage(g, x)

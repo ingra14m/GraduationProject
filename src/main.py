@@ -11,6 +11,7 @@ import sys
 import sqlite3
 import numpy as np
 import pandas as pd
+from utils import Function as MyF
 
 GRADUATION_SCRIPTS_PATH = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 CURRENT_DIR_PATH = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
@@ -157,7 +158,7 @@ class MLPPredictor(nn.Module):
     def apply_edges(self, edges):
         h_u = edges.src['h']
         h_v = edges.dst['h']
-        score = self.W(torch.cat([h_u, h_v], 1))
+        score = F.softmax(self.W(torch.cat([h_u, h_v], 1)))  # (74528， 1024)
         return {'score': score}
 
     def forward(self, graph, h):
@@ -174,6 +175,7 @@ class SAGE(nn.Module):
         super().__init__()
         self.conv1 = dglnn.SAGEConv(
             in_feats=in_feats, out_feats=hid_feats, aggregator_type='mean')
+
         self.conv2 = dglnn.SAGEConv(
             in_feats=hid_feats, out_feats=out_feats, aggregator_type='mean')
 
@@ -186,14 +188,17 @@ class SAGE(nn.Module):
 
 
 class Model(nn.Module):
-    def __init__(self, in_features, hidden_features, out_features):
+    def __init__(self, in_features, hidden_features, out_features, out_classes):
         super().__init__()
         self.sage = SAGE(in_features, hidden_features, out_features)
-        self.pred = DotProductPredictor()
+        # self.pred = DotProductPredictor()  # 边回归问题
+        self.pred = MLPPredictor(out_features, out_classes)
 
     def forward(self, g, x):
-        h = self.sage(g, x)
+        h = self.sage(g, x)  # (572, out_features)
+
         return self.pred(g, h)
+
 
 
 if __name__ == "__main__":
@@ -213,26 +218,35 @@ if __name__ == "__main__":
     graph = dgl.graph((np.concatenate([edge_src, edge_dst]), np.concatenate([edge_dst, edge_src])),
                       num_nodes=node_feature.shape[0])
 
+    # 输入图数据的属性
     # synthetic node and edge features, as well as edge labels
     graph.ndata['feature'] = torch.from_numpy(node_feature).float()
     # graph.edata['feature'] = torch.randn(1000, 10)
     graph.edata['label'] = torch.from_numpy(edge_label)
     # synthetic train-validation-test splits
-    graph.edata['train_mask'] = torch.zeros(graph.num_edges(), dtype=torch.bool).bernoulli(0.6)
+    graph.edata['train_mask'] = torch.zeros(graph.num_edges(), dtype=torch.bool).bernoulli(0.1)
 
     ndata_features = graph.ndata['feature']
     edata_label = graph.edata['label']
     train_mask = graph.edata['train_mask']
-    model = Model(ndata_features.shape[1], 100, len(edata_label))
-    optimizer = torch.optim.Adam(model.parameters())
-    for epoch in range(10):
+    model = Model(ndata_features.shape[1], 1024, 128, event_num)
+    # optimizer = torch.optim.Adam(model.parameters(), lr=1e-5)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-5)
+
+    for epoch in range(50):
         pred = model(graph, ndata_features)
-        # loss = F.cross_entropy(pred[train_mask], edata_label[train_mask])
-        loss = ((pred[train_mask] - edata_label[train_mask]) ** 2).mean()
+        # loss = ((pred[train_mask] - edata_label[train_mask]) ** 2).mean()
+        loss = F.cross_entropy(pred[train_mask], edata_label[train_mask])
+        print("epoch{}, accuracy{}".format(epoch, MyF.Accuracy(pred[train_mask], edata_label[train_mask])))
+        if epoch == 30:
+            result1 = np.array(edata_label[train_mask])
+            np.savetxt('npresult1.txt', result1)
+            result2 = np.array(pred[train_mask].argmax(1))
+            np.savetxt('npresult2.txt', result2)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        print(loss.item())
+        # print(loss.item())
 
     # if args.model.upper() == 'GCN':
     #     from models.GCN import main as GCN_main

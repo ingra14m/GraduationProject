@@ -11,3 +11,5 @@ Graph_Model/.DS_Store
 data/.DS_Store
 data/TWOSIDES/
 models/.DS_Store
+src/utils/__pycache__/
+src/*.txt
