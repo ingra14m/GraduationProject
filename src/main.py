@@ -130,7 +130,8 @@ def feature_extraction(df_drug, mechanism, action, drugA, drugB, feature_list=("
     for i in range(len(d_event)):
         new_label.append(d_label[d_event[i]])
 
-    new_label = np.concatenate([new_label, new_label])
+    # new_label = np.concatenate([new_label, new_label])
+    new_label = np.array(new_label)
 
     return vector, new_label, event_num, edge_src, edge_dst
 
@@ -158,7 +159,7 @@ class MLPPredictor(nn.Module):
     def apply_edges(self, edges):
         h_u = edges.src['h']
         h_v = edges.dst['h']
-        score = F.softmax(self.W(torch.cat([h_u, h_v], 1)))  # (74528， 1024)
+        score = self.W(torch.cat([h_u, h_v], 1))  # (74528， 1024)
         return {'score': score}
 
     def forward(self, graph, h):
@@ -200,7 +201,6 @@ class Model(nn.Module):
         return self.pred(g, h)
 
 
-
 if __name__ == "__main__":
     # 启用这个之后，命令行似乎就不接受没有名字的参数了
     parser = argparse.ArgumentParser()
@@ -210,13 +210,18 @@ if __name__ == "__main__":
     parser.add_argument('-m', '--model', default='gcn')
     args = parser.parse_args()
 
+    best_val_acc = 0
+    best_test_acc = 0
+
     df_drug, mechanism, action, drugA, drugB = data_import()
     node_feature, edge_label, event_num, edge_src, edge_dst = feature_extraction(df_drug, mechanism, action, drugA,
                                                                                  drugB)
 
     # 无向图，需要两边连接
-    graph = dgl.graph((np.concatenate([edge_src, edge_dst]), np.concatenate([edge_dst, edge_src])),
-                      num_nodes=node_feature.shape[0])
+    # graph = dgl.graph((np.concatenate([edge_src, edge_dst]), np.concatenate([edge_dst, edge_src])),
+    #                   num_nodes=node_feature.shape[0])
+
+    graph = dgl.graph((edge_src, edge_dst), num_nodes=node_feature.shape[0])
 
     # 输入图数据的属性
     # synthetic node and edge features, as well as edge labels
@@ -224,28 +229,50 @@ if __name__ == "__main__":
     # graph.edata['feature'] = torch.randn(1000, 10)
     graph.edata['label'] = torch.from_numpy(edge_label)
     # synthetic train-validation-test splits
-    graph.edata['train_mask'] = torch.zeros(graph.num_edges(), dtype=torch.bool).bernoulli(0.1)
+
+    train_mask = torch.zeros(graph.num_edges(), dtype=torch.bool)
+    train_mask[:10000] = True
+    val_mask = torch.zeros(graph.num_edges(), dtype=torch.bool)
+    val_mask[10000:25000] = True
+    test_mask = torch.zeros(graph.num_edges(), dtype=torch.bool)
+    test_mask[25000:] = True
+
+    graph.edata['train_mask'] = train_mask
+    graph.edata['val_mask'] = val_mask
+    graph.edata['test_mask'] = val_mask
 
     ndata_features = graph.ndata['feature']
     edata_label = graph.edata['label']
-    train_mask = graph.edata['train_mask']
     model = Model(ndata_features.shape[1], 1024, 128, event_num)
     # optimizer = torch.optim.Adam(model.parameters(), lr=1e-5)
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-5)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 
-    for epoch in range(50):
+    for epoch in range(1000):
         pred = model(graph, ndata_features)
         # loss = ((pred[train_mask] - edata_label[train_mask]) ** 2).mean()
         loss = F.cross_entropy(pred[train_mask], edata_label[train_mask])
-        print("epoch{}, accuracy{}".format(epoch, MyF.Accuracy(pred[train_mask], edata_label[train_mask])))
-        if epoch == 30:
-            result1 = np.array(edata_label[train_mask])
-            np.savetxt('npresult1.txt', result1)
-            result2 = np.array(pred[train_mask].argmax(1))
-            np.savetxt('npresult2.txt', result2)
+        # if epoch == 30:
+        #     result1 = np.array(edata_label[train_mask])
+        #     np.savetxt('npresult1.txt', result1)
+        #     result2 = np.array(pred[train_mask].argmax(1))
+        #     np.savetxt('npresult2.txt', result2)
+
+        train_acc = MyF.Accuracy(pred[train_mask], edata_label[train_mask])
+        val_acc = MyF.Accuracy(pred[val_mask], edata_label[val_mask])
+        test_acc = MyF.Accuracy(pred[test_mask], edata_label[test_mask])
+
+        # Save the best validation accuracy and the corresponding test accuracy.
+        if best_val_acc < val_acc:
+            best_val_acc = val_acc
+            best_test_acc = test_acc
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+
+        if epoch % 5 == 0:
+            print(
+                'In epoch {}, loss: {:.3f},train acc: {:.3f}, val acc: {:.3f} (best {:.3f}), test acc: {:.3f} (best {:.3f})'.format(
+                    epoch, loss, train_acc, val_acc, best_val_acc, test_acc, best_test_acc))
         # print(loss.item())
 
     # if args.model.upper() == 'GCN':

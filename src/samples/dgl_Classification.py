@@ -70,6 +70,7 @@ def train(g, model):
         if e % 5 == 0:
             print('In epoch {}, loss: {:.3f}, val acc: {:.3f} (best {:.3f}), test acc: {:.3f} (best {:.3f})'.format(
                 e, loss, val_acc, best_val_acc, test_acc, best_test_acc))
+            print(logits[train_mask][0])
 
 
 # Create the model with given dimensions

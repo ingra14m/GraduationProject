@@ -13,3 +13,4 @@ data/TWOSIDES/
 models/.DS_Store
 src/utils/__pycache__/
 src/*.txt
+MDF-SA-DDI/
