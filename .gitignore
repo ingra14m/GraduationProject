@@ -19,3 +19,4 @@ src/models/GCN/script/__pycache__/
 src/models/GraphSAGE/__pycache__/
 src/models/GraphSAGE/script/__pycache__/
 src/models/__pycache__/
+src/models/GateGAT/codes/__pycache__
