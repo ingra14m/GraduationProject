@@ -13,6 +13,34 @@ class GAT(nn.Module):
     """定义GAT网络
     """
 
+    """GAT模型训练与预测
+
+        加载GAT模型, 生成训练必要组件实例
+
+        Input:
+        ------
+        params: dict, 模型参数和超参数, 格式为:
+                {
+                    'sparse': False,
+                    'random_state' 42,
+                    'model': {
+                        'input_dim': 1433,
+                        'hidden_dim': 8,
+                        'output_dim': 7,
+                        'num_heads': 8,
+                        'dropout': 0.6,
+                        'alpha': 0.2
+                    },
+                    'hyper': {
+                        'lr': 3e-3,
+                        'epochs': 10,
+                        'patience': 100,
+                        'weight_decay': 5e-4
+                    }
+                }
+
+    """
+
     def __init__(self, input_dim, hidden_dim, output_dim, num_heads, dropout, alpha, sparse=False):
         """定义GAT网络
 

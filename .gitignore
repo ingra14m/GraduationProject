@@ -14,3 +14,7 @@ models/.DS_Store
 src/utils/__pycache__/
 src/*.txt
 MDF-SA-DDI/
+src/models/GCN/__pycache__/
+src/models/GCN/script/__pycache__/
+src/models/GraphSAGE/__pycache__/
+src/models/GraphSAGE/script/__pycache__/

@@ -7,10 +7,14 @@ import dgl.function as fn
 import torch.nn.functional as F
 from utils.PreProcessing import *
 from utils import Function as MyF
+from models.GAT.script.model import GAT
+from models.GCN.script.model import GCN
+from models.GraphSAGE.script.model import GraphSAGE
 
 '''
     model for edge classfication
 '''
+
 
 class DotProductPredictor(nn.Module):
     def forward(self, graph, h):
@@ -59,16 +63,30 @@ class SAGE(nn.Module):
         return h
 
 
-class Model(nn.Module):
+class SAGE_Model(nn.Module):
     def __init__(self, in_features, hidden_features, out_features, out_classes):
         super().__init__()
         self.sage = SAGE(in_features, hidden_features, out_features)
+        # self.gat = GAT(input_dim=in_features, hidden_dim=hidden_features, output_dim=out_features, num_heads=8,
+        #                dropout=0.6, alpha=0.4)
         # self.pred = DotProductPredictor()  # 边回归问题
         self.pred = MLPPredictor(out_features, out_classes)
 
     def forward(self, g, x):
+        # for SAGE
         h = self.sage(g, x)  # (572, out_features)
+        # h = self.gat(x, g.edges())
+        return self.pred(g, h)
 
+class GAT_Model(nn.Module):
+    def __init__(self, in_features, hidden_features, out_features, out_classes):
+        super().__init__()
+        self.gat = GAT(input_dim=in_features, hidden_dim=hidden_features, output_dim=out_features, num_heads=8,
+                       dropout=0.6, alpha=0.4)
+        self.pred = MLPPredictor(out_features, out_classes)
+
+    def forward(self, g, x):
+        h = self.gat(x, g.edges())
         return self.pred(g, h)
 
 
@@ -114,8 +132,7 @@ if __name__ == "__main__":
 
     ndata_features = graph.ndata['feature']
     edata_label = graph.edata['label']
-    model = Model(ndata_features.shape[1], 1024, 128, event_num)
-    # optimizer = torch.optim.Adam(model.parameters(), lr=1e-5)
+    model = SAGE_Model(ndata_features.shape[1], 1024, 128, event_num)
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 
     for epoch in range(1000):
