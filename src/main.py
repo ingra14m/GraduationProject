@@ -2,138 +2,32 @@ import torch
 import torch.nn as nn
 import argparse
 import dgl
-import dgl.nn as dglnn
-import dgl.function as fn
 import torch.nn.functional as F
 from utils.PreProcessing import *
 from utils import Function as MyF
-from models.GAT.script.model import GAT
-from models.GCN.script.model import GCN
-from models.GraphSAGE.script.model import GraphSAGE
+import models.EdgeClassfication as mynn
 
 '''
     model for edge classfication
 '''
+GNN_MODEL = {
+    'GCN': None,
+    'GAT': mynn.GATModel,
+    'GRAPHSAGE': mynn.SAGEModel,
+    'GATEGAT': None,
+    'FASTGCN': None
+}
 
 
-class DotProductPredictor(nn.Module):
-    def forward(self, graph, h):
-        # h contains the node representations computed from the GNN defined
-        # in the node classification section (Section 5.1).
-        with graph.local_scope():
-            graph.ndata['h'] = h
-            graph.apply_edges(fn.u_dot_v('h', 'h', 'score'))
-            return graph.edata['score']
-
-
-class MLPPredictor(nn.Module):
-    def __init__(self, in_features, out_classes):
-        super().__init__()
-        self.W = nn.Linear(in_features * 2, out_classes)
-
-    def apply_edges(self, edges):
-        h_u = edges.src['h']
-        h_v = edges.dst['h']
-        score = self.W(torch.cat([h_u, h_v], 1))  # (74528， 1024)
-        return {'score': score}
-
-    def forward(self, graph, h):
-        # h contains the node representations computed from the GNN defined
-        # in the node classification section (Section 5.1).
-        with graph.local_scope():
-            graph.ndata['h'] = h
-            graph.apply_edges(self.apply_edges)
-            return graph.edata['score']
-
-
-class SAGE(nn.Module):
-    def __init__(self, in_feats, hid_feats, out_feats):
-        super().__init__()
-        self.conv1 = dglnn.SAGEConv(
-            in_feats=in_feats, out_feats=hid_feats, aggregator_type='mean')
-
-        self.conv2 = dglnn.SAGEConv(
-            in_feats=hid_feats, out_feats=out_feats, aggregator_type='mean')
-
-    def forward(self, graph, inputs):
-        # inputs are features of nodes
-        h = self.conv1(graph, inputs)
-        h = F.relu(h)
-        h = self.conv2(graph, h)
-        return h
-
-
-class SAGE_Model(nn.Module):
-    def __init__(self, in_features, hidden_features, out_features, out_classes):
-        super().__init__()
-        self.sage = SAGE(in_features, hidden_features, out_features)
-        # self.gat = GAT(input_dim=in_features, hidden_dim=hidden_features, output_dim=out_features, num_heads=8,
-        #                dropout=0.6, alpha=0.4)
-        # self.pred = DotProductPredictor()  # 边回归问题
-        self.pred = MLPPredictor(out_features, out_classes)
-
-    def forward(self, g, x):
-        # for SAGE
-        h = self.sage(g, x)  # (572, out_features)
-        # h = self.gat(x, g.edges())
-        return self.pred(g, h)
-
-class GAT_Model(nn.Module):
-    def __init__(self, in_features, hidden_features, out_features, out_classes):
-        super().__init__()
-        self.gat = GAT(input_dim=in_features, hidden_dim=hidden_features, output_dim=out_features, num_heads=8,
-                       dropout=0.6, alpha=0.4)
-        self.pred = MLPPredictor(out_features, out_classes)
-
-    def forward(self, g, x):
-        h = self.gat(x, g.edges())
-        return self.pred(g, h)
-
-
-if __name__ == "__main__":
-    # 启用这个之后，命令行似乎就不接受没有名字的参数了
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-l', '--language', default='en')  # ch均可
-    parser.add_argument('-p', '--path', default='.')
-    parser.add_argument('-o', '--output', default='ocr_result')
-    parser.add_argument('-m', '--model', default='gcn')
-    args = parser.parse_args()
-
+def train(model, graph, optimizer):
     best_val_acc = 0
     best_test_acc = 0
 
-    df_drug, mechanism, action, drugA, drugB = data_import()
-    node_feature, edge_label, event_num, edge_src, edge_dst = feature_extraction(df_drug, mechanism, action, drugA,
-                                                                                 drugB)
-
-    # 无向图，需要两边连接
-    # graph = dgl.graph((np.concatenate([edge_src, edge_dst]), np.concatenate([edge_dst, edge_src])),
-    #                   num_nodes=node_feature.shape[0])
-
-    graph = dgl.graph((edge_src, edge_dst), num_nodes=node_feature.shape[0])
-
-    # 输入图数据的属性
-    # synthetic node and edge features, as well as edge labels
-    graph.ndata['feature'] = torch.from_numpy(node_feature).float()
-    # graph.edata['feature'] = torch.randn(1000, 10)
-    graph.edata['label'] = torch.from_numpy(edge_label)
-    # synthetic train-validation-test splits
-
-    train_mask = torch.zeros(graph.num_edges(), dtype=torch.bool)
-    train_mask[:10000] = True
-    val_mask = torch.zeros(graph.num_edges(), dtype=torch.bool)
-    val_mask[10000:25000] = True
-    test_mask = torch.zeros(graph.num_edges(), dtype=torch.bool)
-    test_mask[25000:] = True
-
-    graph.edata['train_mask'] = train_mask
-    graph.edata['val_mask'] = val_mask
-    graph.edata['test_mask'] = val_mask
-
     ndata_features = graph.ndata['feature']
     edata_label = graph.edata['label']
-    model = SAGE_Model(ndata_features.shape[1], 1024, 128, event_num)
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
+    train_mask = graph.edata['train_mask']
+    val_mask = graph.edata['val_mask']
+    test_mask = graph.edata['test_mask']
 
     for epoch in range(1000):
         pred = model(graph, ndata_features)
@@ -161,21 +55,55 @@ if __name__ == "__main__":
             print(
                 'In epoch {}, loss: {:.3f},train acc: {:.3f}, val acc: {:.3f} (best {:.3f}), test acc: {:.3f} (best {:.3f})'.format(
                     epoch, loss, train_acc, val_acc, best_val_acc, test_acc, best_test_acc))
-        # print(loss.item())
 
-    # if args.model.upper() == 'GCN':
-    #     from models.GCN import main as GCN_main
-    #     GCN_main.main()
-    # elif args.model.upper() == 'GAT':
-    #     from models.GAT import main as GAT_main
-    #     GAT_main.main()
-    #
-    # elif args.model.upper() == 'GRAPHSAGE':
-    #     from models.GraphSAGE import main as GRAPHSAGE_main
-    #     GRAPHSAGE_main.main()
-    # elif args.model.upper() == 'GRAND':
-    #     from models.GRAND import main as GRAND_main
-    #     GRAND_main.main()
-    # elif args.model.upper() == 'FASTGCN':
-    #     from models.FastGCN import main as FASTGCN_main
-    #     FASTGCN_main.main()
+
+if __name__ == "__main__":
+    # 启用这个之后，命令行似乎就不接受没有名字的参数了
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-l', '--language', default='en')  # ch均可
+    parser.add_argument('-p', '--path', default='.')
+    parser.add_argument('-o', '--output', default='ocr_result')
+    parser.add_argument('-m', '--model', default='gat')
+    args = parser.parse_args()
+
+    df_drug, mechanism, action, drugA, drugB = data_import()
+    node_feature, edge_label, event_num, edge_src, edge_dst = feature_extraction(df_drug, mechanism, action, drugA,
+                                                                                 drugB)
+
+    # 无向图，需要两边连接
+    # graph = dgl.graph((np.concatenate([edge_src, edge_dst]), np.concatenate([edge_dst, edge_src])),
+    #                   num_nodes=node_feature.shape[0])
+
+    graph = dgl.graph((edge_src, edge_dst), num_nodes=node_feature.shape[0])
+
+    # 输入图数据的属性
+    # synthetic node and edge features, as well as edge labels
+    graph.ndata['feature'] = torch.from_numpy(node_feature).float()
+    graph.edata['label'] = torch.from_numpy(edge_label)
+
+    graph.edata['train_mask'] = torch.zeros(graph.num_edges(), dtype=torch.bool)
+    graph.edata['train_mask'][:10000] = True
+    graph.edata['val_mask'] = torch.zeros(graph.num_edges(), dtype=torch.bool)
+    graph.edata['val_mask'][10000:25000] = True
+    graph.edata['test_mask'] = torch.zeros(graph.num_edges(), dtype=torch.bool)
+    graph.edata['test_mask'][25000:] = True
+
+    # model = GNN_MODEL[args.model.upper()](graph.ndata['feature'].shape[1], 1024, 128, event_num)
+    model = None
+    if args.model.upper() == 'GCN':
+        pass
+    elif args.model.upper() == 'GAT':
+        model = mynn.GATModel(graph.ndata['feature'].shape[1], 1024, 128, event_num)
+
+    elif args.model.upper() == 'GRAPHSAGE':
+        model = mynn.SAGEModel(graph.ndata['feature'].shape[1], 1024, 128, event_num)
+
+    elif args.model.upper() == 'GATEGAT':
+        pass
+
+    elif args.model.upper() == 'FASTGCN':
+        pass
+
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
+
+    train(model=model, optimizer=optimizer, graph=graph)

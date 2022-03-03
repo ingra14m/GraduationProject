@@ -20,3 +20,5 @@ src/models/GraphSAGE/__pycache__/
 src/models/GraphSAGE/script/__pycache__/
 src/models/__pycache__/
 src/models/GateGAT/codes/__pycache__
+src/models/GAT/__pycache__/
+src/models/GAT/script/__pycache__/

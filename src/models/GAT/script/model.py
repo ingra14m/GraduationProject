@@ -1,46 +1,57 @@
-"""定义GAT网络
-"""
+"""GAT模型训练与预测
 
+    加载GAT模型, 生成训练必要组件实例
+
+    Input:
+    ------
+    params: dict, 模型参数和超参数, 格式为:
+            {
+                'sparse': False,
+                'random_state' 42,
+                'model': {
+                    'input_dim': 1433,
+                    'hidden_dim': 8,
+                    'output_dim': 7,
+                    'num_heads': 8,
+                    'dropout': 0.6,
+                    'alpha': 0.2
+                },
+                'hyper': {
+                    'lr': 3e-3,
+                    'epochs': 10,
+                    'patience': 100,
+                    'weight_decay': 5e-4
+                }
+            }
+
+"""
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+import dgl.nn.pytorch as dglnn
 
 from .layers import GraphAttentionLayer
 from .layers import SparseGraphAttentionLayer
 
+# dgl自带的GAT
+class GATBlock(nn.Module):
+    def __init__(self, in_feats, hid_feats, out_feats, num_heads=8):
+        super(GATBlock, self).__init__()
+        self.gat1 = dglnn.GATConv(in_feats=in_feats, out_feats=hid_feats, num_heads=num_heads,
+                                  allow_zero_in_degree=True)
+        self.gat2 = dglnn.GATConv(in_feats=hid_feats, out_feats=out_feats, num_heads=num_heads,
+                                  allow_zero_in_degree=True)
 
+    def forward(self, graph, inputs):
+        h = self.gat1(graph, inputs)
+        h = torch.mean(F.relu(h), dim=1)  # 多头的参数
+        h = self.gat2(graph, h)
+        return torch.mean(h, dim=1)
+
+
+# 自实现的GAT
 class GAT(nn.Module):
-    """定义GAT网络
-    """
-
-    """GAT模型训练与预测
-
-        加载GAT模型, 生成训练必要组件实例
-
-        Input:
-        ------
-        params: dict, 模型参数和超参数, 格式为:
-                {
-                    'sparse': False,
-                    'random_state' 42,
-                    'model': {
-                        'input_dim': 1433,
-                        'hidden_dim': 8,
-                        'output_dim': 7,
-                        'num_heads': 8,
-                        'dropout': 0.6,
-                        'alpha': 0.2
-                    },
-                    'hyper': {
-                        'lr': 3e-3,
-                        'epochs': 10,
-                        'patience': 100,
-                        'weight_decay': 5e-4
-                    }
-                }
-
-    """
-
     def __init__(self, input_dim, hidden_dim, output_dim, num_heads, dropout, alpha, sparse=False):
         """定义GAT网络
 
@@ -60,7 +71,7 @@ class GAT(nn.Module):
 
         if sparse:  # 使用稀疏数据的attention层
             attention_layer = SparseGraphAttentionLayer
-        else:       # 使用稠密数据的attention层
+        else:  # 使用稠密数据的attention层
             attention_layer = GraphAttentionLayer
 
         # 多头注意力层
@@ -74,7 +85,7 @@ class GAT(nn.Module):
 
         return
 
-    def forward(self, X, edges):
+    def forward(self, edges, X):
         """GAT网络前馈
 
             Inputs:
@@ -87,7 +98,6 @@ class GAT(nn.Module):
             output: tensor, 输出
 
         """
-
         # 拼接多头注意力层输出
         out = torch.cat([attention(X, edges) for attention in self.attentions], dim=1)
 
