@@ -110,4 +110,5 @@ if __name__ == "__main__":
     elif args.model.upper() == 'FASTGCN':
         pass
 
-    # train(model=model, optimizer=optimizer, graph=graph)
+    if args.model.upper() != 'GATEGAT':
+        train(model=model, optimizer=optimizer, graph=graph)
