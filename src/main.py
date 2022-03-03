@@ -63,7 +63,7 @@ if __name__ == "__main__":
     parser.add_argument('-l', '--language', default='en')  # ch均可
     parser.add_argument('-p', '--path', default='.')
     parser.add_argument('-o', '--output', default='ocr_result')
-    parser.add_argument('-m', '--model', default='gat')
+    parser.add_argument('-m', '--model', default='gategat')
     args = parser.parse_args()
 
     df_drug, mechanism, action, drugA, drugB = data_import()
@@ -90,20 +90,24 @@ if __name__ == "__main__":
 
     # model = GNN_MODEL[args.model.upper()](graph.ndata['feature'].shape[1], 1024, 128, event_num)
     model = None
+    optimizer = None
+
     if args.model.upper() == 'GCN':
-        pass
+        model = mynn.GCNModel(graph.ndata['feature'].shape[1], 1024, 128, event_num)
+        optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
     elif args.model.upper() == 'GAT':
         model = mynn.GATModel(graph.ndata['feature'].shape[1], 1024, 128, event_num)
+        optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
     elif args.model.upper() == 'GRAPHSAGE':
         model = mynn.SAGEModel(graph.ndata['feature'].shape[1], 1024, 128, event_num)
+        optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 
     elif args.model.upper() == 'GATEGAT':
-        pass
+        from models.GateGAT.script import train
+        train.main(graph, event_num)
 
     elif args.model.upper() == 'FASTGCN':
         pass
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
-
-    train(model=model, optimizer=optimizer, graph=graph)
+    # train(model=model, optimizer=optimizer, graph=graph)

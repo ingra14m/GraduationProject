@@ -1,6 +1,27 @@
-"""定义GCN模型
+"""FastGCN训练与预测
 
-    定义图卷积层和简单图网络。
+    加载FastGCN模型, 生成训练必要组件实例
+
+    Input:
+    ------
+    params: dict, 模型参数和超参数, 格式为:
+            {
+                'random_state': 42,
+                'model': {
+                    'input_dim': 1433,
+                    'output_dim': 7,
+                    'hidden_dim': 16,
+                    'use_bias': True,
+                    'dropout': 0.5
+                },
+                'hyper': {
+                    'lr': 1e-2,
+                    'epochs': 100,
+                    'batch_size': 64,
+                    'weight_decay': 5e-4,
+                    'sampler_dims': [128, 128]
+                }
+            }
 
 """
 

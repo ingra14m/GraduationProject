@@ -109,9 +109,9 @@ class MLPPredictor(nn.Module):
             return self.g.edata['score']
 
 
-class GATE_GATLayer(nn.Module):
+class GateGATLayer(nn.Module):
     def __init__(self, g, in_dim, out_dim):
-        super(GATE_GATLayer, self).__init__()
+        super(GateGATLayer, self).__init__()
         self.g = g
         # equation (1)
         self.fc = nn.Linear(in_dim, out_dim, bias=False)
@@ -161,7 +161,7 @@ class MultiHeadGATLayer(nn.Module):
         super(MultiHeadGATLayer, self).__init__()
         self.heads = nn.ModuleList()
         for i in range(num_heads):
-            self.heads.append(GATE_GATLayer(g, in_dim, out_dim))
+            self.heads.append(GateGATLayer(g, in_dim, out_dim))
         self.merge = merge
 
     def forward(self, h, gate):
@@ -174,25 +174,112 @@ class MultiHeadGATLayer(nn.Module):
             return torch.mean(torch.stack(head_outs))
 
 
-class GATE_GAT(nn.Module):
-    def __init__(self, g, in_dim, hidden_dim, out_dim, num_heads, dot = False):
-        super(GATE_GAT, self).__init__()
+class MLPEdgePredictor(nn.Module):
+    def __init__(self, in_features, out_classes):
+        super().__init__()
+        self.W = nn.Linear(in_features * 2, out_classes)
+
+    def apply_edges(self, edges):
+        h_u = edges.src['h']
+        h_v = edges.dst['h']
+        score = self.W(torch.cat([h_u, h_v], 1))  # (74528， 1024)
+        return {'score': score}
+
+    def forward(self, graph, h):
+        # h contains the node representations computed from the GNN defined
+        # in the node classification section (Section 5.1).
+        with graph.local_scope():
+            graph.ndata['h'] = h
+            graph.apply_edges(self.apply_edges)
+            return graph.edata['score']
+
+
+class GateGAT(nn.Module):
+    def __init__(self, g, in_dim, hidden_dim, out_dim, num_heads, out_classes, dot=False):
+        super(GateGAT, self).__init__()
         if dot:
             self.layer0 = DotProductPredictor(g)
         else:
             self.layer0 = MLPPredictor(g, in_dim)
-        # self.layer0 = MLPGate(g, in_dim)
-        # self.layer0 = MLPPredictor(g, in_dim)
+
         self.layer1 = MultiHeadGATLayer(g, in_dim, hidden_dim, num_heads)
         self.layer2 = MultiHeadGATLayer(g, hidden_dim * num_heads, out_dim, 1)
+        self.pred = MLPEdgePredictor(out_dim, out_classes)
 
-    def forward(self, h):
+    def forward(self, g, h):
         gate = self.layer0(h)
-        # 打印 gate 值
-        # gate1 = gate.detach().numpy()
-        # ar, num = np.unique(gate1, return_counts=True)
-        # print(f"score: {ar}, num: {num}")
         h = self.layer1(h, gate)
         h = F.elu(h)
         h = self.layer2(h, gate)
-        return h, gate
+        return self.pred(g, h), gate
+
+
+class GATLayer(nn.Module):
+    def __init__(self, g, in_dim, out_dim):
+        super(GATLayer, self).__init__()
+        self.g = g
+        # equation (1)
+        self.fc = nn.Linear(in_dim, out_dim, bias=False)
+        # equation (2)
+        self.attn_fc = nn.Linear(2 * out_dim, 1, bias=False)
+
+    def edge_attention(self, edges):
+        # edge UDF for equation (2)
+        z2 = torch.cat([edges.src['z'], edges.dst['z']], dim=1)
+        a = self.attn_fc(z2)
+        # print('a:', a[-20])
+        return {'e': F.leaky_relu(a)}
+
+    def message_func(self, edges):
+        # message UDF for equation (3) & (4)
+        return {'z': edges.src['z'], 'e': edges.data['e']}
+
+    def reduce_func(self, nodes):
+        # equation (3)
+        alpha = F.softmax(nodes.mailbox['e'], dim=1)
+        h = torch.sum(alpha * nodes.mailbox['z'], dim=1)
+        # equation (4)
+        return {'h': h}
+
+    def forward(self, h):
+        # equation (1)
+        z = self.fc(h)
+        self.g.ndata['z'] = z
+        # equation (2)
+        self.g.apply_edges(self.edge_attention)
+        # equation (3) & (4)
+        self.g.update_all(self.message_func, self.reduce_func)
+        return self.g.ndata.pop('h')
+
+
+class GATMultiHeadGATLayer(nn.Module):
+    def __init__(self, g, in_dim, out_dim, num_heads, merge='cat'):
+        super(GATMultiHeadGATLayer, self).__init__()
+        self.heads = nn.ModuleList()
+        for i in range(num_heads):
+            self.heads.append(GATLayer(g, in_dim, out_dim))
+        self.merge = merge
+
+    def forward(self, h):
+        head_outs = [attn_head(h) for attn_head in self.heads]
+        if self.merge == 'cat':
+            # concat on the output feature dimension (dim=1)
+            return torch.cat(head_outs, dim=1)
+        else:
+            # merge using average
+            return torch.mean(torch.stack(head_outs))
+
+
+class GAT(nn.Module):
+    def __init__(self, g, in_dim, hidden_dim, out_dim, num_heads, out_classes):
+        super(GAT, self).__init__()
+        self.layer1 = GATMultiHeadGATLayer(g, in_dim, hidden_dim, num_heads)
+        self.layer2 = GATMultiHeadGATLayer(g, hidden_dim * num_heads, out_dim, 1)
+
+        self.pred = MLPEdgePredictor(out_dim, out_classes)
+
+    def forward(self, g, h):
+        h = self.layer1(h)
+        h = F.elu(h)
+        h = self.layer2(h)
+        return self.pred(g, h), None
