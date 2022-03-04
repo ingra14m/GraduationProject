@@ -29,34 +29,37 @@ def train(model, graph, optimizer):
     val_mask = graph.edata['val_mask']
     test_mask = graph.edata['test_mask']
 
-    for epoch in range(1000):
-        pred = model(graph, ndata_features)
-        # loss = ((pred[train_mask] - edata_label[train_mask]) ** 2).mean()
-        loss = F.cross_entropy(pred[train_mask], edata_label[train_mask])
-        # if epoch == 30:
-        #     result1 = np.array(edata_label[train_mask])
-        #     np.savetxt('npresult1.txt', result1)
-        #     result2 = np.array(pred[train_mask].argmax(1))
-        #     np.savetxt('npresult2.txt', result2)
+    with open("result.txt") as f:
+        for epoch in range(1000):
+            pred = model(graph, ndata_features)
+            # loss = ((pred[train_mask] - edata_label[train_mask]) ** 2).mean()
+            loss = F.cross_entropy(pred[train_mask], edata_label[train_mask])
+            # if epoch == 30:
+            #     result1 = np.array(edata_label[train_mask])
+            #     np.savetxt('npresult1.txt', result1)
+            #     result2 = np.array(pred[train_mask].argmax(1))
+            #     np.savetxt('npresult2.txt', result2)
 
-        train_acc = MyF.Accuracy(pred[train_mask], edata_label[train_mask])
-        val_acc = MyF.Accuracy(pred[val_mask], edata_label[val_mask])
-        test_acc = MyF.Accuracy(pred[test_mask], edata_label[test_mask])
+            train_acc = MyF.Accuracy(pred[train_mask], edata_label[train_mask])
+            val_acc = MyF.Accuracy(pred[val_mask], edata_label[val_mask])
+            test_acc = MyF.Accuracy(pred[test_mask], edata_label[test_mask])
 
-        # Save the best validation accuracy and the corresponding test accuracy.
-        if best_val_acc < val_acc:
-            best_val_acc = val_acc
-        if best_test_acc < test_acc:
-            best_test_acc = test_acc
+            # Save the best validation accuracy and the corresponding test accuracy.
+            if best_val_acc < val_acc:
+                best_val_acc = val_acc
+            if best_test_acc < test_acc:
+                best_test_acc = test_acc
 
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
-        if epoch % 5 == 0:
-            print(
-                'In epoch {}, loss: {:.3f},train acc: {:.3f}, val acc: {:.3f} (best {:.3f}), test acc: {:.3f} (best {:.3f})'.format(
-                    epoch, loss, train_acc, val_acc, best_val_acc, test_acc, best_test_acc))
+            if epoch % 5 == 0:
+                content = 'In epoch {}, loss: {:.3f},train acc: {:.3f}, val acc: {:.3f} (best {:.3f}), test acc: {:.3f} (best {:.3f})'.format(
+                    epoch, loss, train_acc, val_acc, best_val_acc, test_acc, best_test_acc)
+                print(content)
+                f.write(content + '\n')
+        f.close()
 
 
 if __name__ == "__main__":
@@ -107,6 +110,7 @@ if __name__ == "__main__":
 
     elif args.model.upper() == 'GATEGAT':
         from models.GateGAT.script import train
+
         train.main(graph, event_num)
 
     elif args.model.upper() == 'FASTGCN':
