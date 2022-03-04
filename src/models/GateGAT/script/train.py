@@ -14,9 +14,9 @@ import argparse
 from .model import GAT
 from .model import GateGAT
 
-
 # from GateGAT import GATE_GAT
 final_gate = None
+
 
 def plot_embeddings(embeddings, X, Y):
     print(Y)

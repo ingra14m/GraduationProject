@@ -46,7 +46,9 @@ def train(model, graph, optimizer):
         # Save the best validation accuracy and the corresponding test accuracy.
         if best_val_acc < val_acc:
             best_val_acc = val_acc
+        if best_test_acc < test_acc:
             best_test_acc = test_acc
+
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()

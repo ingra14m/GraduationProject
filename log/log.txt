@@ -1634,10 +1634,10 @@ Epoch 00045 | Loss: 1.004 | train acc: 0.971 | val acc: 0.766 (best 0.000) | tes
 Epoch 00050 | Loss: 0.872 | train acc: 0.986 | val acc: 0.764 (best 0.000) | test acc: 0.767 (best 0.000) | Time(s) 0.4407
 Epoch 00055 | Loss: 0.757 | train acc: 0.986 | val acc: 0.766 (best 0.000) | test acc: 0.771 (best 0.000) | Time(s) 0.4406
 Epoch 00060 | Loss: 0.660 | train acc: 0.986 | val acc: 0.768 (best 0.000) | test acc: 0.773 (best 0.000) | Time(s) 0.4385
-Epoch 00065 | Loss: 0.578 | train acc: 0.986 | val acc: 0.766 (best 0.000) | test acc: 0.771 (best 0.000) | Time(s) 0.4371
-Epoch 00070 | Loss: 0.508 | train acc: 0.986 | val acc: 0.772 (best 0.000) | test acc: 0.772 (best 0.000) | Time(s) 0.4360
-Epoch 00075 | Loss: 0.450 | train acc: 0.986 | val acc: 0.772 (best 0.000) | test acc: 0.767 (best 0.000) | Time(s) 0.4349
-Epoch 00080 | Loss: 0.401 | train acc: 0.993 | val acc: 0.756 (best 0.000) | test acc: 0.763 (best 0.000) | Time(s) 0.4340
+Epoch 00065 | Loss: 0.578 | train acc: 0.986 | val acc: 0.802 (best 0.000) | test acc: 0.771 (best 0.000) | Time(s) 0.4371
+Epoch 00070 | Loss: 0.508 | train acc: 0.986 | val acc: 0.836 (best 0.000) | test acc: 0.772 (best 0.000) | Time(s) 0.4360
+Epoch 00075 | Loss: 0.450 | train acc: 0.986 | val acc: 0.851 (best 0.000) | test acc: 0.767 (best 0.000) | Time(s) 0.4349
+Epoch 00080 | Loss: 0.401 | train acc: 0.993 | val acc: 0.792 (best 0.000) | test acc: 0.763 (best 0.000) | Time(s) 0.4340
 Epoch 00085 | Loss: 0.360 | train acc: 0.993 | val acc: 0.748 (best 0.000) | test acc: 0.759 (best 0.000) | Time(s) 0.4332
 Epoch 00090 | Loss: 0.325 | train acc: 0.993 | val acc: 0.736 (best 0.000) | test acc: 0.753 (best 0.000) | Time(s) 0.4324
 Epoch 00095 | Loss: 0.298 | train acc: 0.993 | val acc: 0.730 (best 0.000) | test acc: 0.743 (best 0.000) | Time(s) 0.4318
