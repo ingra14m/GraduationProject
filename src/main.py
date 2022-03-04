@@ -29,7 +29,7 @@ def train(model, graph, optimizer):
     val_mask = graph.edata['val_mask']
     test_mask = graph.edata['test_mask']
 
-    with open("result.txt") as f:
+    with open("result.txt", 'w') as f:
         for epoch in range(1000):
             pred = model(graph, ndata_features)
             # loss = ((pred[train_mask] - edata_label[train_mask]) ** 2).mean()
