@@ -19,7 +19,7 @@ GNN_MODEL = {
 }
 
 
-def train(model, graph, optimizer):
+def train(model, graph, optimizer, output):
     best_val_acc = 0
     best_test_acc = 0
 
@@ -29,8 +29,8 @@ def train(model, graph, optimizer):
     val_mask = graph.edata['val_mask']
     test_mask = graph.edata['test_mask']
 
-    with open("result.txt", 'w') as f:
-        for epoch in range(1000):
+    with open("{}.txt".format(output), 'w') as f:
+        for epoch in range(2000):
             pred = model(graph, ndata_features)
             # loss = ((pred[train_mask] - edata_label[train_mask]) ** 2).mean()
             loss = F.cross_entropy(pred[train_mask], edata_label[train_mask])
@@ -87,11 +87,11 @@ if __name__ == "__main__":
     graph.edata['label'] = torch.from_numpy(edge_label)
 
     graph.edata['train_mask'] = torch.zeros(graph.num_edges(), dtype=torch.bool)
-    graph.edata['train_mask'][:10000] = True
+    graph.edata['train_mask'][:33000] = True
     graph.edata['val_mask'] = torch.zeros(graph.num_edges(), dtype=torch.bool)
-    graph.edata['val_mask'][10000:25000] = True
+    graph.edata['val_mask'][33000:35000] = True
     graph.edata['test_mask'] = torch.zeros(graph.num_edges(), dtype=torch.bool)
-    graph.edata['test_mask'][25000:] = True
+    graph.edata['test_mask'][35000:] = True
 
     # model = GNN_MODEL[args.model.upper()](graph.ndata['feature'].shape[1], 1024, 128, event_num)
     model = None
@@ -109,12 +109,12 @@ if __name__ == "__main__":
         optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 
     elif args.model.upper() == 'GATEGAT':
-        from models.GateGAT.script import train
+        from models.GateGAT.script import train as gate_train
 
-        train.main(graph, event_num)
+        gate_train.main(graph, event_num)
 
     elif args.model.upper() == 'FASTGCN':
         pass
 
     if args.model.upper() != 'GATEGAT':
-        train(model=model, optimizer=optimizer, graph=graph)
+        train(model=model, optimizer=optimizer, graph=graph, output=args.output)

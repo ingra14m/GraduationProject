@@ -23,4 +23,5 @@ src/models/GateGAT/script/__pycache__
 src/models/GAT/__pycache__/
 src/models/GAT/script/__pycache__/
 log/*.txt
+log/GraphSage/*.txt
 log/train.py
