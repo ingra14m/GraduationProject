@@ -56,10 +56,10 @@ def train(g, net, output, search=True, isreTrain=False):
     dur = []
     # fp = open("logGAT.txt", "a+", encoding="utf-8")
     if search:
-        EPOCH = 400  # previous 400
+        EPOCH = 5000  # previous 400
         # fp.write("Search Stage:\n")
     else:
-        EPOCH = 200  # previous 200
+        EPOCH = 5000  # previous 200
         # if isreTrain:
         #     fp.write("reTrain GAT Stage:\n")
         # else:
