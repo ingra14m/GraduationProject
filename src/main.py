@@ -106,14 +106,14 @@ if __name__ == "__main__":
         optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
     elif args.model.upper() == 'GRAPHSAGE':
-        model = mynn.SAGEModel(graph.ndata['feature'].shape[1], 1024, 256, event_num)
+        model = mynn.SAGEModel(graph.ndata['feature'].shape[1], 1024, 128, event_num)
         # optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
         optimizer = RAdam(model.parameters(), lr=1e-4)
 
     elif args.model.upper() == 'GATEGAT':
         from models.GateGAT.script import train as gate_train
 
-        gate_train.main(graph, event_num)
+        gate_train.main(graph, event_num, args.output)
 
     elif args.model.upper() == 'FASTGCN':
         pass

@@ -40,7 +40,7 @@ def plot_embeddings(embeddings, X, Y):
     plt.show()
 
 
-def train(g, net, search=True, isreTrain=False):
+def train(g, net, output, search=True, isreTrain=False):
     logits = 0
     gate = 0
     features = g.ndata['feature']
@@ -56,45 +56,54 @@ def train(g, net, search=True, isreTrain=False):
     dur = []
     # fp = open("logGAT.txt", "a+", encoding="utf-8")
     if search:
-        EPOCH = 10  # previous 400
+        EPOCH = 400  # previous 400
         # fp.write("Search Stage:\n")
     else:
-        EPOCH = 20  # previous 200
+        EPOCH = 200  # previous 200
         # if isreTrain:
         #     fp.write("reTrain GAT Stage:\n")
         # else:
         #     fp.write("GAT Stage:\n")
+    with open("{}.txt".format(output), 'a') as f:
+        for epoch in range(EPOCH):
+            if epoch % 5 == 0:
+                t0 = time.time()
 
-    for epoch in range(EPOCH):
-        if epoch % 5 == 0:
-            t0 = time.time()
+            logits, gate = net(g, features)
+            pred = logits.argmax(1)
 
-        logits, gate = net(g, features)
-        pred = logits.argmax(1)
+            if search:
+                loss = F.cross_entropy(logits, labels)
+                train_acc = (pred[train_mask] == labels[train_mask]).float().mean()
+                val_acc = (pred[val_mask] == labels[val_mask]).float().mean()
+                test_acc = (pred[test_mask] == labels[test_mask]).float().mean()
+            else:
+                loss = F.cross_entropy(logits[train_mask], labels[train_mask])
+                train_acc = (pred[train_mask] == labels[train_mask]).float().mean()
+                val_acc = (pred[val_mask] == labels[val_mask]).float().mean()
+                test_acc = (pred[test_mask] == labels[test_mask]).float().mean()
 
-        if search:
-            loss = F.cross_entropy(logits, labels)
-            train_acc = (pred[train_mask] == labels[train_mask]).float().mean()
-            val_acc = (pred[val_mask] == labels[val_mask]).float().mean()
-            test_acc = (pred[test_mask] == labels[test_mask]).float().mean()
-        else:
-            loss = F.cross_entropy(logits[train_mask], labels[train_mask])
-            train_acc = (pred[train_mask] == labels[train_mask]).float().mean()
-            val_acc = (pred[val_mask] == labels[val_mask]).float().mean()
-            test_acc = (pred[test_mask] == labels[test_mask]).float().mean()
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+            if best_val_acc < val_acc:
+                best_val_acc = val_acc
+            if best_test_acc < test_acc:
+                best_test_acc = test_acc
 
-        if epoch % 5 == 0:
-            dur.append(time.time() - t0)
-            # if search:
-            #     print("Epoch {:05d} | Loss {:.4f} | train acc: {:.3f}| Time(s) {:.4f}".format(
-            #         epoch, loss.item(), train_acc, np.mean(dur)))
-            # else:
-            expLog = 'Epoch {:05d} | Loss: {:.3f} | train acc: {:.3f} | val acc: {:.3f} (best {:.3f}) | test acc: {:.3f} (best {:.3f}) | Time(s) {:.4f}'.format(
-                epoch, loss, train_acc, val_acc, best_val_acc, test_acc, best_test_acc, np.mean(dur))
-            print(expLog)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            if epoch % 5 == 0:
+                dur.append(time.time() - t0)
+                # if search:
+                #     print("Epoch {:05d} | Loss {:.4f} | train acc: {:.3f}| Time(s) {:.4f}".format(
+                #         epoch, loss.item(), train_acc, np.mean(dur)))
+                # else:
+                expLog = 'Epoch {:05d} | Loss: {:.3f} | train acc: {:.3f} | val acc: {:.3f} (best {:.3f}) | test acc: {:.3f} (best {:.3f}) | Time(s) {:.4f}'.format(
+                    epoch, loss, train_acc, val_acc, best_val_acc, test_acc, best_test_acc, np.mean(dur))
+                print(expLog)
+                f.write(expLog + '\n')
+
+        f.close()
 
             # fp.write(expLog + '\n')
 
@@ -106,7 +115,7 @@ def train(g, net, search=True, isreTrain=False):
     return logits, gate
 
 
-def main(g, event_num):
+def main(g, event_num, output):
     for delEdge in [20]:
         # 载入数据
         # data = citegrh.load_cora()
@@ -122,7 +131,7 @@ def main(g, event_num):
                       out_dim=7,
                       num_heads=8, out_classes=event_num, dot=False)
 
-        _, gate = train(g, net, search=True)
+        _, gate = train(g, net, output, search=True)
 
         print('------------------------original GAT--------------------------')
 
@@ -143,7 +152,7 @@ def main(g, event_num):
 
         # 2.训练，报告结果
         retrain_start = time.time()
-        h, _ = train(g, net, search=False, isreTrain=True)
+        h, _ = train(g, net, output, search=False, isreTrain=True)
         retrain_end = time.time()
         restrainGat = "retrain gat time : {}".format(retrain_end - retrain_start)
         print(restrainGat)
