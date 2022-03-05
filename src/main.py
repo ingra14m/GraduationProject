@@ -106,7 +106,7 @@ if __name__ == "__main__":
         optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
     elif args.model.upper() == 'GRAPHSAGE':
-        model = mynn.SAGEModel(graph.ndata['feature'].shape[1], 1024, 128, event_num)
+        model = mynn.SAGEModel(graph.ndata['feature'].shape[1], 1024, 256, event_num)
         # optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
         optimizer = RAdam(model.parameters(), lr=1e-4)
 
