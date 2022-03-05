@@ -22,12 +22,14 @@ class DotProductPredictor(nn.Module):
 class MLPPredictor(nn.Module):
     def __init__(self, in_features, out_classes):
         super().__init__()
-        self.W = nn.Linear(in_features * 2, out_classes)
+        self.W1 = nn.Linear(in_features * 2, 128)
+        self.W2 = nn.Linear(128, out_classes)
 
     def apply_edges(self, edges):
         h_u = edges.src['h']
         h_v = edges.dst['h']
-        score = self.W(torch.cat([h_u, h_v], 1))  # (74528， 1024)
+        score = F.relu(self.W1(torch.cat([h_u, h_v], 1)))  # (74528， 1024)
+        score = self.W2(score)
         return {'score': score}
 
     def forward(self, graph, h):
