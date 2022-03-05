@@ -30,7 +30,7 @@ def train(model, graph, optimizer, output):
     test_mask = graph.edata['test_mask']
 
     with open("{}.txt".format(output), 'w') as f:
-        for epoch in range(2000):
+        for epoch in range(5000):
             pred = model(graph, ndata_features)
             # loss = ((pred[train_mask] - edata_label[train_mask]) ** 2).mean()
             loss = F.cross_entropy(pred[train_mask], edata_label[train_mask])
