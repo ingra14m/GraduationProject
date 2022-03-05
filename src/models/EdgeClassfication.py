@@ -29,7 +29,7 @@ class MLPPredictor(nn.Module):
         h_u = edges.src['h']
         h_v = edges.dst['h']
         score = F.relu(self.W1(torch.cat([h_u, h_v], 1)))  # (74528， 1024)
-        score = self.W2(score)
+        score = F.relu(self.W2(score))
         return {'score': score}
 
     def forward(self, graph, h):
