@@ -49,7 +49,7 @@ def train(g, net, output, search=True, isreTrain=False):
     val_mask = g.edata['val_mask']
     test_mask = g.edata['test_mask']
 
-    optimizer = torch.optim.Adam(net.parameters(), lr=5e-3, weight_decay=5e-4)
+    optimizer = torch.optim.Adam(net.parameters(), lr=1e-2, weight_decay=5e-4)
     lossFunction = nn.CrossEntropyLoss(reduction='mean')
     best_val_acc = 0
     best_test_acc = 0
