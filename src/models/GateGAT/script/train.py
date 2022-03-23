@@ -8,6 +8,7 @@ from dgl.data import citation_graph as citegrh
 import time
 import numpy as np
 import torch.nn as nn
+import dgl.nn.pytorch as dglnn
 import copy
 import argparse
 
@@ -16,6 +17,63 @@ from .model import GateGAT
 
 # from GateGAT import GATE_GAT
 final_gate = None
+
+class MLPPredictor(nn.Module):
+    def __init__(self, in_features, out_classes):
+        super().__init__()
+        self.W1 = nn.Linear(in_features * 2, 256)
+        self.W2 = nn.Linear(256, 128)
+        self.W3 = nn.Linear(128, out_classes)
+
+    def apply_edges(self, edges):
+        h_u = edges.src['h']
+        h_v = edges.dst['h']
+        score = F.relu(self.W1(torch.cat([h_u, h_v], 1)))  # (74528， 1024)
+        score = F.relu(self.W2(score))
+        score = self.W3(score)
+        return {'score': score}
+
+    def forward(self, graph, h):
+        # h contains the node representations computed from the GNN defined
+        # in the node classification section (Section 5.1).
+        with graph.local_scope():
+            graph.ndata['h'] = h
+            graph.apply_edges(self.apply_edges)
+            return graph.edata['score']
+
+class GraphSAGEBlock(nn.Module):
+
+    # Aggregator type to use (``mean``, ``gcn``, ``pool``, ``lstm``).
+
+    def __init__(self, in_feats, hid_feats, out_feats):
+        super().__init__()
+        self.conv1 = dglnn.SAGEConv(
+            in_feats=in_feats, out_feats=hid_feats, aggregator_type='mean')
+
+        self.conv2 = dglnn.SAGEConv(
+            in_feats=hid_feats, out_feats=out_feats, aggregator_type='mean')
+
+    def forward(self, graph, inputs):
+        # inputs are features of nodes
+        h = self.conv1(graph, inputs)
+        h = F.relu(h)
+        h = self.conv2(graph, h)
+        return h
+
+class SAGEModel(nn.Module):
+    def __init__(self, in_features, hidden_features, out_features, out_classes):
+        super().__init__()
+        self.sage = GraphSAGEBlock(in_features, hidden_features, out_features)
+        # self.gat = GAT(input_dim=in_features, hidden_dim=hidden_features, output_dim=out_features, num_heads=8,
+        #                dropout=0.6, alpha=0.4)
+        # self.pred = DotProductPredictor()  # 边回归问题
+        self.pred = MLPPredictor(out_features, out_classes)
+
+    def forward(self, g, x):
+        # for SAGE
+        h = self.sage(g, x)  # (572, out_features)
+        # h = self.gat(x, g.edges())
+        return self.pred(g, h)
 
 
 def plot_embeddings(embeddings, X, Y):
@@ -137,11 +195,16 @@ def main(g, event_num, output):
 
         # 第二阶段：retrain stage ：在 gate 的基础上，得出预测结果，验证模型
         print('------------------------retrain stage--------------------------')
-        net = GAT(g,
-                  in_dim=g.ndata['feature'].shape[1],
-                  hidden_dim=8,
-                  out_dim=7,
-                  num_heads=8, out_classes=event_num)
+        # net = GAT(g,
+        #           in_dim=g.ndata['feature'].shape[1],
+        #           hidden_dim=8,
+        #           out_dim=7,
+        #           num_heads=8, out_classes=event_num)
+
+        net = SAGEModel(in_features=g.ndata['feature'].shape[1],
+                        hidden_features=1024,
+                        out_features=128,
+                        out_classes=event_num)
         # 1.根据gate的结果，删除对应的边
 
         gate_np = gate.squeeze()
