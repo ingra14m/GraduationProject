@@ -18,6 +18,7 @@ from .model import GateGAT
 # from GateGAT import GATE_GAT
 final_gate = None
 
+
 class MLPPredictor(nn.Module):
     def __init__(self, in_features, out_classes):
         super().__init__()
@@ -41,6 +42,7 @@ class MLPPredictor(nn.Module):
             graph.apply_edges(self.apply_edges)
             return graph.edata['score']
 
+
 class GraphSAGEBlock(nn.Module):
 
     # Aggregator type to use (``mean``, ``gcn``, ``pool``, ``lstm``).
@@ -59,6 +61,7 @@ class GraphSAGEBlock(nn.Module):
         h = F.relu(h)
         h = self.conv2(graph, h)
         return h
+
 
 class SAGEModel(nn.Module):
     def __init__(self, in_features, hidden_features, out_features, out_classes):
@@ -114,7 +117,7 @@ def train(g, net, output, search=True, isreTrain=False):
     dur = []
     # fp = open("logGAT.txt", "a+", encoding="utf-8")
     if search:
-        EPOCH = 5000  # previous 400
+        EPOCH = 5  # previous 400
         # fp.write("Search Stage:\n")
     else:
         EPOCH = 5000  # previous 200
@@ -127,7 +130,10 @@ def train(g, net, output, search=True, isreTrain=False):
             if epoch % 5 == 0:
                 t0 = time.time()
 
-            logits, gate = net(g, features)
+            if search:
+                logits, gate = net(g, features)
+            else:
+                logits = net(g, features)
             pred = logits.argmax(1)
 
             if search:
@@ -163,7 +169,7 @@ def train(g, net, output, search=True, isreTrain=False):
 
         f.close()
 
-            # fp.write(expLog + '\n')
+        # fp.write(expLog + '\n')
 
     # fp.close()
     # ------------打印训练参数-----------
