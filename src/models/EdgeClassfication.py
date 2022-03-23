@@ -47,6 +47,7 @@ class SAGEModel(nn.Module):
     def __init__(self, in_features, hidden_features, out_features, out_classes):
         super().__init__()
         self.sage = GraphSAGEBlock(in_features, hidden_features, out_features)
+        self.sage2 = GraphSAGEBlock(out_features, out_features * 2, out_features)
         # self.gat = GAT(input_dim=in_features, hidden_dim=hidden_features, output_dim=out_features, num_heads=8,
         #                dropout=0.6, alpha=0.4)
         # self.pred = DotProductPredictor()  # 边回归问题
@@ -54,7 +55,8 @@ class SAGEModel(nn.Module):
 
     def forward(self, g, x):
         # for SAGE
-        h = self.sage(g, x)  # (572, out_features)
+        h = F.relu(self.sage(g, x))  # (572, out_features)
+        h = self.sage2(g, h)
         # h = self.gat(x, g.edges())
         return self.pred(g, h)
 

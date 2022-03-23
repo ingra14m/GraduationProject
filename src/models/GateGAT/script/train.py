@@ -117,7 +117,7 @@ def train(g, net, output, search=True, isreTrain=False):
     dur = []
     # fp = open("logGAT.txt", "a+", encoding="utf-8")
     if search:
-        EPOCH = 5  # previous 400
+        EPOCH = 2000  # previous 400
         # fp.write("Search Stage:\n")
     else:
         EPOCH = 5000  # previous 200
@@ -180,7 +180,7 @@ def train(g, net, output, search=True, isreTrain=False):
 
 
 def main(g, event_num, output):
-    for delEdge in [20]:
+    for delEdge in [5]:
         # 载入数据
         # data = citegrh.load_cora()
         # g = data[0]
