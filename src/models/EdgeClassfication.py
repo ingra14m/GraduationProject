@@ -47,7 +47,8 @@ class SAGEModel(nn.Module):
     def __init__(self, in_features, hidden_features, out_features, out_classes):
         super().__init__()
         self.sage = GraphSAGEBlock(in_features, hidden_features, out_features)
-        self.sage2 = GraphSAGEBlock(out_features, out_features * 2, out_features)
+        self.sage2 = dglnn.SAGEConv(
+            in_feats=out_features, out_feats=out_features, aggregator_type='mean')
         # self.gat = GAT(input_dim=in_features, hidden_dim=hidden_features, output_dim=out_features, num_heads=8,
         #                dropout=0.6, alpha=0.4)
         # self.pred = DotProductPredictor()  # 边回归问题
