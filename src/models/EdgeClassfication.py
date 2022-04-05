@@ -44,11 +44,11 @@ class MLPPredictor(nn.Module):
 
 
 class SAGEModel(nn.Module):
-    def __init__(self, in_features, hidden_features, out_features, out_classes):
+    def __init__(self, in_features, hidden_features, out_features, out_classes, aggregator):
         super().__init__()
-        self.sage = GraphSAGEBlock(in_features, hidden_features, out_features)
+        self.sage = GraphSAGEBlock(in_features, hidden_features, out_features, aggregator)
         self.sage2 = dglnn.SAGEConv(
-            in_feats=out_features, out_feats=out_features, aggregator_type='mean')
+            in_feats=out_features, out_feats=out_features, aggregator_type=aggregator)
         # self.gat = GAT(input_dim=in_features, hidden_dim=hidden_features, output_dim=out_features, num_heads=8,
         #                dropout=0.6, alpha=0.4)
         # self.pred = DotProductPredictor()  # 边回归问题

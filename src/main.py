@@ -7,6 +7,10 @@ from utils.PreProcessing import *
 from utils import Function as MyF
 from utils.radam import RAdam
 import models.EdgeClassfication as mynn
+import scipy.stats as stat
+
+data_list = [[3, 3, 3], [3, 5, 6], [4, 8, 9]]
+stat.f_oneway(data_list)
 
 '''
     model for edge classfication
@@ -106,7 +110,7 @@ if __name__ == "__main__":
         optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
     elif args.model.upper() == 'GRAPHSAGE':
-        model = mynn.SAGEModel(graph.ndata['feature'].shape[1], 1024, 128, event_num)
+        model = mynn.SAGEModel(graph.ndata['feature'].shape[1], 1024, 128, event_num, 'pool')
         # optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
         optimizer = RAdam(model.parameters(), lr=1e-4)
 
