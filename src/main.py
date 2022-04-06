@@ -74,7 +74,7 @@ if __name__ == "__main__":
     parser.add_argument('-l', '--language', default='en')  # ch均可
     parser.add_argument('-p', '--path', default='.')
     parser.add_argument('-o', '--output', default='ocr_result')
-    parser.add_argument('-m', '--model', default='graphsage')
+    parser.add_argument('-m', '--model', default='gcn')
     args = parser.parse_args()
 
     df_drug, mechanism, action, drugA, drugB = data_import()
