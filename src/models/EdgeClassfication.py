@@ -33,7 +33,7 @@ class MLPPredictor(nn.Module):
         score = F.relu(self.W1(torch.cat([h_u, h_v], 1)))  # (74528， 1024)
         score = F.relu(self.W2(score))
         if self.softmax:
-            score = nn.Softmax(self.W3(score), dim=1)
+            score = nn.functional.softmax(self.W3(score), dim=1)
         else:
             score = self.W3(score)
         return {'score': score}
