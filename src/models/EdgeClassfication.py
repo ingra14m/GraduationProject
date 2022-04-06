@@ -5,7 +5,7 @@ import dgl
 import dgl.nn.pytorch as dglnn
 import dgl.function as fn
 from .GAT.script.model import GAT
-from .GCN.script.model import GCNBlock
+from .GCN.script.model import GCNBlock, GCNBlock2
 from .GraphSAGE.script.model import GraphSAGEBlock
 
 
@@ -74,9 +74,12 @@ class GATModel(nn.Module):
 
 
 class GCNModel(nn.Module):
-    def __init__(self, in_features, hidden_features, out_features, out_classes):
+    def __init__(self, in_features, hidden_features, out_features, out_classes, norm=True):
         super(GCNModel, self).__init__()
-        self.gcn = GCNBlock(in_features, hidden_features, out_features)
+        if norm:
+            self.gcn = GCNBlock2(in_features, hidden_features, out_features)
+        else:
+            self.gcn = GCNBlock(in_features, hidden_features, out_features)
         self.pred = MLPPredictor(out_features, out_classes)
 
     def forward(self, g, x):

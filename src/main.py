@@ -20,7 +20,7 @@ GNN_MODEL = {
 }
 
 
-def train(model, graph, optimizer, output):
+def train(model, graph, optimizer, output, add_self_loop=False):
     best_val_acc = 0
     best_test_acc = 0
 
@@ -29,6 +29,9 @@ def train(model, graph, optimizer, output):
     train_mask = graph.edata['train_mask']
     val_mask = graph.edata['val_mask']
     test_mask = graph.edata['test_mask']
+
+    if add_self_loop:
+        graph.add_self_loop()
 
     with open("{}.txt".format(output), 'w') as f:
         for epoch in range(5000):
@@ -69,7 +72,7 @@ if __name__ == "__main__":
     parser.add_argument('-l', '--language', default='en')  # ch均可
     parser.add_argument('-p', '--path', default='.')
     parser.add_argument('-o', '--output', default='ocr_result')
-    parser.add_argument('-m', '--model', default='gategat')
+    parser.add_argument('-m', '--model', default='graphsage')
     args = parser.parse_args()
 
     df_drug, mechanism, action, drugA, drugB = data_import()
@@ -87,6 +90,7 @@ if __name__ == "__main__":
     graph.ndata['feature'] = torch.from_numpy(node_feature).float()
     graph.edata['label'] = torch.from_numpy(edge_label)
 
+    # 训练机、测试集以及验证集的划分
     graph.edata['train_mask'] = torch.zeros(graph.num_edges(), dtype=torch.bool)
     graph.edata['train_mask'][:33000] = True
     graph.edata['val_mask'] = torch.zeros(graph.num_edges(), dtype=torch.bool)
@@ -105,8 +109,9 @@ if __name__ == "__main__":
         model = mynn.GATModel(graph.ndata['feature'].shape[1], 1024, 128, event_num)
         optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
+    # GraphSage的参数基本已经调通，不涉及degree为0的情况
     elif args.model.upper() == 'GRAPHSAGE':
-        model = mynn.SAGEModel(graph.ndata['feature'].shape[1], 1024, 128, event_num, 'pool')
+        model = mynn.SAGEModel(graph.ndata['feature'].shape[1], 1024, 128, event_num, 'mean')
         # optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
         optimizer = RAdam(model.parameters(), lr=1e-4)
 
@@ -118,5 +123,8 @@ if __name__ == "__main__":
     elif args.model.upper() == 'FASTGCN':
         pass
 
-    if args.model.upper() != 'GATEGAT':
+    if args.model.upper() == 'GCN':
+        train(model=model, optimizer=optimizer, graph=graph, output=args.output, add_self_loop=True)
+
+    else:
         train(model=model, optimizer=optimizer, graph=graph, output=args.output)
