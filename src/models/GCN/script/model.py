@@ -149,6 +149,6 @@ class GCNBlock(nn.Module):
         """
         adjacency = graph.ndata['adj']
         out = self.gcn1(adjacency, x)
-        out = self.dropout(self.act(out))
+        out = self.act(out)
         logits = self.gcn2(adjacency, out)
         return logits
