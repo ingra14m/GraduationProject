@@ -38,10 +38,8 @@ from .layers import SparseGraphAttentionLayer
 class GATBlock(nn.Module):
     def __init__(self, in_feats, hid_feats, out_feats, num_heads=8):
         super(GATBlock, self).__init__()
-        self.gat1 = dglnn.GATConv(in_feats=in_feats, out_feats=hid_feats, num_heads=num_heads,
-                                  allow_zero_in_degree=True)
-        self.gat2 = dglnn.GATConv(in_feats=hid_feats, out_feats=out_feats, num_heads=num_heads,
-                                  allow_zero_in_degree=True)
+        self.gat1 = dglnn.GATConv(in_feats=in_feats, out_feats=hid_feats, num_heads=num_heads)
+        self.gat2 = dglnn.GATConv(in_feats=hid_feats, out_feats=out_feats, num_heads=num_heads)
 
     def forward(self, graph, inputs):
         h = self.gat1(graph, inputs)

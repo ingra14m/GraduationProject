@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import dgl
 import dgl.nn.pytorch as dglnn
 import dgl.function as fn
-from .GAT.script.model import GAT
+from .GAT.script.model import GAT, GATBlock
 from .GCN.script.model import GCNBlock, GCNBlock2
 from .GraphSAGE.script.model import GraphSAGEBlock
 
@@ -69,11 +69,14 @@ class SAGEModel(nn.Module):
 class GATModel(nn.Module):
     def __init__(self, in_features, hidden_features, out_features, out_classes):
         super().__init__()
-        self.gat = GAT(in_features, hidden_features, out_features, num_heads=8, dropout=0.6, alpha=0.2)
+        # self.gat = GAT(in_features, hidden_features, out_features, num_heads=8, dropout=0.6, alpha=0.2)
+        self.gat = GATBlock(in_features, hidden_features, out_features)
         self.pred = MLPPredictor(out_features, out_classes)
 
     def forward(self, g, x):
+        g = dgl.add_self_loop(g)
         h = self.gat(g.edges(), x)
+        g = dgl.remove_self_loop(g)
         return self.pred(g, h)
 
 

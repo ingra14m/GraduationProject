@@ -106,7 +106,7 @@ if __name__ == "__main__":
 
     if args.model.upper() == 'GCN':
         # 用的是LeakyRelu
-        model = mynn.GCNModel(graph.ndata['feature'].shape[1], 1024, 128, event_num)
+        model = mynn.GCNModel(graph.ndata['feature'].shape[1], 1024, 128, event_num, norm=True)
         optimizer = torch.optim.Adam(model.parameters(), lr=1e-2, weight_decay=5e-4)
     elif args.model.upper() == 'GAT':
         model = mynn.GATModel(graph.ndata['feature'].shape[1], 1024, 128, event_num)
