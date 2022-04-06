@@ -128,8 +128,9 @@ class GCNBlock(nn.Module):
         self.gcn1 = GCN(input_dim, hidden_dim, use_bias)
         self.gcn2 = GCN(hidden_dim, output_dim, use_bias)
 
-        self.act = nn.ReLU(inplace=True)
-        self.dropout = nn.Dropout(p=dropout)
+        # self.act = nn.ReLU(inplace=True)
+        self.act = nn.ReLU()
+        # self.dropout = nn.Dropout(p=dropout)
 
         return
 
