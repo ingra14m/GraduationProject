@@ -30,10 +30,10 @@ def train(model, graph, optimizer, output, add_self_loop=False):
     val_mask = graph.edata['val_mask']
     test_mask = graph.edata['test_mask']
 
-    if add_self_loop:
-        graph = dgl.add_self_loop(graph)
-        graph.ndata['adj'] = graph.adjacency_matrix()
-        graph = dgl.remove_self_loop(graph)
+    # if add_self_loop:
+    #     graph = dgl.add_self_loop(graph)
+    #     graph.ndata['adj'] = graph.adjacency_matrix()
+    #     graph = dgl.remove_self_loop(graph)
 
     with open("{}.txt".format(output), 'w') as f:
         for epoch in range(5000):

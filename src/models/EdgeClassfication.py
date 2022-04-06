@@ -80,6 +80,7 @@ class GATModel(nn.Module):
 class GCNModel(nn.Module):
     def __init__(self, in_features, hidden_features, out_features, out_classes, norm=False):
         super(GCNModel, self).__init__()
+        self.norm = norm
         if norm:
             self.gcn = GCNBlock2(in_features, hidden_features, out_features)
         else:
@@ -87,5 +88,9 @@ class GCNModel(nn.Module):
         self.pred = MLPPredictor(out_features, out_classes)
 
     def forward(self, g, x):
+        if self.norm:
+            g = dgl.add_self_loop(g)
         h = self.gcn(g, x)
+        if self.norm:
+            g = dgl.remove_self_loop(g)
         return self.pred(g, h)
