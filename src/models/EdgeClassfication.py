@@ -30,8 +30,8 @@ class MLPPredictor(nn.Module):
     def apply_edges(self, edges):
         h_u = edges.src['h']
         h_v = edges.dst['h']
-        score = F.relu(self.W1(torch.cat([h_u, h_v], 1)))  # (74528， 1024)
-        score = F.relu(self.W2(score))
+        score = F.leaky_relu(self.W1(torch.cat([h_u, h_v], 1)))  # (74528， 1024)
+        score = F.leaky_relu(self.W2(score))
         if self.softmax:
             score = nn.functional.softmax(self.W3(score), dim=1)
         else:
@@ -84,7 +84,7 @@ class GCNModel(nn.Module):
             self.gcn = GCNBlock2(in_features, hidden_features, out_features)
         else:
             self.gcn = GCNBlock(in_features, hidden_features, out_features)
-        self.pred = MLPPredictor(out_features, out_classes, softmax=True)
+        self.pred = MLPPredictor(out_features, out_classes)
 
     def forward(self, g, x):
         h = self.gcn(g, x)
