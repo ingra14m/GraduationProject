@@ -74,7 +74,7 @@ class GATModel(nn.Module):
 
 
 class GCNModel(nn.Module):
-    def __init__(self, in_features, hidden_features, out_features, out_classes, norm=True):
+    def __init__(self, in_features, hidden_features, out_features, out_classes, norm=False):
         super(GCNModel, self).__init__()
         if norm:
             self.gcn = GCNBlock2(in_features, hidden_features, out_features)

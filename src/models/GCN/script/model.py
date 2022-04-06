@@ -146,7 +146,7 @@ class GCNBlock(nn.Module):
             logits: tensor in shape [num_nodes, output_dim], 输出
 
         """
-        adjacency = graph.adjacency
+        adjacency = graph.ndata['adj']
         out = self.gcn1(adjacency, x)
         out = self.dropout(self.act(out))
         logits = self.gcn2(adjacency, out)
