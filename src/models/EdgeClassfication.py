@@ -75,7 +75,7 @@ class GATModel(nn.Module):
 
     def forward(self, g, x):
         g = dgl.add_self_loop(g)
-        h = self.gat(g.edges(), x)
+        h = self.gat(g, x)
         g = dgl.remove_self_loop(g)
         return self.pred(g, h)
 

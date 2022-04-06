@@ -19,6 +19,11 @@ GNN_MODEL = {
     'FASTGCN': None
 }
 
+SET_SPLIT = {
+    "GAT": (25000, 32000),
+    "GRAPHSAGE": (33000, 35000)
+}
+
 
 def train(model, graph, optimizer, output, add_self_loop=False):
     best_val_acc = 0
@@ -94,11 +99,11 @@ if __name__ == "__main__":
 
     # 训练机、测试集以及验证集的划分
     graph.edata['train_mask'] = torch.zeros(graph.num_edges(), dtype=torch.bool)
-    graph.edata['train_mask'][:33000] = True
+    graph.edata['train_mask'][:SET_SPLIT[args.model.upper()][0]] = True
     graph.edata['val_mask'] = torch.zeros(graph.num_edges(), dtype=torch.bool)
-    graph.edata['val_mask'][33000:35000] = True
+    graph.edata['val_mask'][SET_SPLIT[args.model.upper()][0]:SET_SPLIT[args.model.upper()][1]] = True
     graph.edata['test_mask'] = torch.zeros(graph.num_edges(), dtype=torch.bool)
-    graph.edata['test_mask'][35000:] = True
+    graph.edata['test_mask'][SET_SPLIT[args.model.upper()][1]:] = True
 
     # model = GNN_MODEL[args.model.upper()](graph.ndata['feature'].shape[1], 1024, 128, event_num)
     model = None
@@ -107,7 +112,7 @@ if __name__ == "__main__":
     if args.model.upper() == 'GCN':
         # 用的是LeakyRelu
         model = mynn.GCNModel(graph.ndata['feature'].shape[1], 1024, 128, event_num, norm=True)
-        optimizer = torch.optim.Adam(model.parameters(), lr=1e-2, weight_decay=5e-4)
+        optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=5e-4)
     elif args.model.upper() == 'GAT':
         model = mynn.GATModel(graph.ndata['feature'].shape[1], 1024, 128, event_num)
         optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
