@@ -110,7 +110,7 @@ class GCNBlock(nn.Module):
 
     """
 
-    def __init__(self, input_dim, output_dim, hidden_dim, dropout, use_bias=True):
+    def __init__(self, input_dim, output_dim, hidden_dim, dropout=0.2, use_bias=True):
         """简单图卷积网络
 
             Inputs:
