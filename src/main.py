@@ -105,14 +105,16 @@ if __name__ == "__main__":
     optimizer = None
 
     if args.model.upper() == 'GCN':
+        # 用的是LeakyRelu
         model = mynn.GCNModel(graph.ndata['feature'].shape[1], 1024, 128, event_num)
-        optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+        optimizer = torch.optim.Adam(model.parameters(), lr=1e-2, weight_decay=5e-4)
     elif args.model.upper() == 'GAT':
         model = mynn.GATModel(graph.ndata['feature'].shape[1], 1024, 128, event_num)
         optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
     # GraphSage的参数基本已经调通，不涉及degree为0的情况
     elif args.model.upper() == 'GRAPHSAGE':
+        # 用的是Relu
         model = mynn.SAGEModel(graph.ndata['feature'].shape[1], 1024, 128, event_num, 'mean')
         # optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
         optimizer = RAdam(model.parameters(), lr=1e-4)
