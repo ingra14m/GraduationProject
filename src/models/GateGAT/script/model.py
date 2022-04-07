@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import dgl.function as fn
 
 
+# 这个显然是不会使用的
 class DotProductPredictor(nn.Module):
     def __init__(self, g):
         super(DotProductPredictor, self).__init__()
@@ -31,40 +32,7 @@ class DotProductPredictor(nn.Module):
             return score
 
 
-class MLPGate(nn.Module):
-    def __init__(self, g, in_features):
-        super().__init__()
-        self.g = g
-        self.W = nn.Linear(in_features * 2, 1)
-
-    def apply_edges(self, edges):
-        h_u = edges.src['h']
-        h_v = edges.dst['h']
-        score = self.W(torch.cat([h_u, h_v], 1))
-        # 对score进行归一化处理
-        s1 = score.detach().numpy()
-
-        max_num = max(s1)
-        min_num = min(s1)
-        score = (score - torch.tensor([min_num])) / (torch.tensor([max_num]) - torch.tensor([min_num]))
-        # s2 = score.detach().numpy()
-        # #
-        # interval = (torch.max(score) - torch.min(score)) / 10
-        # 需要根据score的得分，学出来一个截断值，其实，这里也可以通过考虑，是否要去除10%，20%的边，看精度有没有变化
-        # for i in range(len(score)):
-        #     if score[i] < s2[np.ceil(len(score) / 10)]:
-        #         score[i] = 0
-        #     else:
-        #         score[i] = 1
-        return {'score': score}
-
-    def forward(self, h):
-        with self.g.local_scope():
-            self.g.ndata['h'] = h
-            self.g.apply_edges(self.apply_edges)
-            return self.g.edata['score']
-
-
+# 返回的是边的score，按照顺序
 class MLPPredictor(nn.Module):
     def __init__(self, g, h_feats):
         super().__init__()
@@ -80,27 +48,17 @@ class MLPPredictor(nn.Module):
         s2 = self.W2(s1)
         score = self.W3(F.relu(s2))
 
-        s1 = score.detach().numpy()
+        s1 = score.detach().numpy()  # 不计算梯度了，得到边的一个最终得分，成为了一个数组
         max_num = max(s1)
         min_num = min(s1)
+        # 归一化
         score = (score - torch.tensor([min_num])) / (torch.tensor([max_num]) - torch.tensor([min_num]))
-        # for i in range(len(score)):
-        #     if score[i] == 0:
-        #         score[i] = 0
-        #     else:
-        #         score[i] = 1
-
-        # score = torch.argmax(score, dim=1)
-        # score = torch.unsqueeze(score,1)
-
-        # print('argmax score:', score)
-        # b = torch.unique(score)
-
+        # 由于是apply_edges，因此将这一部分数据存储在edata['score']中
         return {'score': score}
 
     def forward(self, h):
         with self.g.local_scope():
-            h = self.W1(h)
+            h = self.W1(h)  # 将node特征映射到16维
             self.g.ndata['h'] = h
             self.g.apply_edges(self.apply_edges)
             # x=self.g.edata['score']
@@ -180,18 +138,18 @@ class MLPEdgePredictor(nn.Module):
         self.W = nn.Linear(in_features * 2, out_classes)
 
     def apply_edges(self, edges):
-        h_u = edges.src['h']
-        h_v = edges.dst['h']
+        h_u = edges.src['final']
+        h_v = edges.dst['final']
         score = self.W(torch.cat([h_u, h_v], 1))  # (74528， 1024)
-        return {'score': score}
+        return {'edge_score': score}
 
     def forward(self, graph, h):
         # h contains the node representations computed from the GNN defined
         # in the node classification section (Section 5.1).
         with graph.local_scope():
-            graph.ndata['h'] = h
+            graph.ndata['final'] = h
             graph.apply_edges(self.apply_edges)
-            return graph.edata['score']
+            return graph.edata['edge_score']
 
 
 class GateGAT(nn.Module):
@@ -209,7 +167,7 @@ class GateGAT(nn.Module):
     def forward(self, g, h):
         gate = self.layer0(h)
         h = self.layer1(h, gate)
-        h = F.elu(h)
+        h = F.leaky_relu(h)
         h = self.layer2(h, gate)
         return self.pred(g, h), gate
 
@@ -280,6 +238,6 @@ class GAT(nn.Module):
 
     def forward(self, g, h):
         h = self.layer1(h)
-        h = F.elu(h)
+        h = F.leaky_relu(h)
         h = self.layer2(h)
         return self.pred(g, h), None

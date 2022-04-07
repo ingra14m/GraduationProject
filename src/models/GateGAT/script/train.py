@@ -1,3 +1,4 @@
+import dgl
 import torch
 import torch.nn.functional as F
 from sklearn.manifold import TSNE
@@ -72,9 +73,11 @@ class SAGEModel(nn.Module):
         # self.pred = DotProductPredictor()  # 边回归问题
         self.pred = MLPPredictor(out_features, out_classes)
 
-    def forward(self, g, x):
+    def forward(self, g, x, delete_eids):
         # for SAGE
+        g.remove_edges(delete_eids)
         h = self.sage(g, x)  # (572, out_features)
+        g.add_edges(delete_eids)
         # h = self.gat(x, g.edges())
         return self.pred(g, h)
 
@@ -101,7 +104,7 @@ def plot_embeddings(embeddings, X, Y):
     plt.show()
 
 
-def train(g, net, output, search=True, isreTrain=False):
+def train(g, net, output, search=True, isreTrain=False, eid=None):
     logits = 0
     gate = 0
     features = g.ndata['feature']
@@ -133,7 +136,7 @@ def train(g, net, output, search=True, isreTrain=False):
             if search:
                 logits, gate = net(g, features)
             else:
-                logits = net(g, features)
+                logits = net(g, features, eid)
             pred = logits.argmax(1)
 
             if search:
@@ -191,13 +194,11 @@ def main(g, event_num, output):
         print('------------------------search stage--------------------------')
         net = GateGAT(g,
                       in_dim=g.ndata['feature'].shape[1],
-                      hidden_dim=8,
-                      out_dim=7,
+                      hidden_dim=1024,
+                      out_dim=128,
                       num_heads=8, out_classes=event_num, dot=False)
 
         _, gate = train(g, net, output, search=True)
-
-        print('------------------------original GAT--------------------------')
 
         # 第二阶段：retrain stage ：在 gate 的基础上，得出预测结果，验证模型
         print('------------------------retrain stage--------------------------')
@@ -217,11 +218,11 @@ def main(g, event_num, output):
         _, indices = torch.sort(gate_np)
         position = int(len(gate_np) / delEdge)
         delete_eids = indices[0:position]
-        g.remove_edges(delete_eids)
+        # g.remove_edges(delete_eids)
 
         # 2.训练，报告结果
         retrain_start = time.time()
-        h, _ = train(g, net, output, search=False, isreTrain=True)
+        h, _ = train(g, net, output, search=False, isreTrain=True, eid=delete_eids)
         retrain_end = time.time()
         restrainGat = "retrain gat time : {}".format(retrain_end - retrain_start)
         print(restrainGat)
