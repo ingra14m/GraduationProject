@@ -193,9 +193,9 @@ def main(g, event_num, output):
         print('------------------------search stage--------------------------')
         net = GateGAT(g,
                       in_dim=g.ndata['feature'].shape[1],
-                      hidden_dim=1024,
-                      out_dim=128,
-                      num_heads=2, out_classes=event_num, dot=False)
+                      hidden_dim=256,
+                      out_dim=64,
+                      num_heads=4, out_classes=event_num, dot=False)
 
         _, gate = train(g, net, output, search=True)  # 得到的是所有边的得分
 
@@ -203,9 +203,9 @@ def main(g, event_num, output):
         print('------------------------retrain stage--------------------------')
         net = GAT(g,
                   in_dim=g.ndata['feature'].shape[1],
-                  hidden_dim=8,
-                  out_dim=7,
-                  num_heads=8, out_classes=event_num)
+                  hidden_dim=512,
+                  out_dim=128,
+                  num_heads=4, out_classes=event_num)
 
         # net = SAGEModel(in_features=g.ndata['feature'].shape[1],
         #                 hidden_features=1024,
