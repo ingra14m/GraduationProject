@@ -236,8 +236,10 @@ class GAT(nn.Module):
 
         self.pred = MLPEdgePredictor(out_dim, out_classes)
 
-    def forward(self, g, h):
+    def forward(self, g, h, delete_eids):
+        g.remove_edges(delete_eids)
         h = self.layer1(h)
         h = F.leaky_relu(h)
         h = self.layer2(h)
+        g.add_edges(delete_eids)
         return self.pred(g, h), None

@@ -205,7 +205,7 @@ def main(g, event_num, output):
                   in_dim=g.ndata['feature'].shape[1],
                   hidden_dim=512,
                   out_dim=128,
-                  num_heads=4, out_classes=event_num)
+                  num_heads=2, out_classes=event_num)
 
         # net = SAGEModel(in_features=g.ndata['feature'].shape[1],
         #                 hidden_features=1024,
@@ -221,8 +221,8 @@ def main(g, event_num, output):
 
         # 2.训练，报告结果
         retrain_start = time.time()
-        # h, _ = train(g, net, output, search=False, eid=delete_eids)
-        h, _ = train(g, net, output, search=False)
+        h, _ = train(g, net, output, search=False, eid=delete_eids)
+        # h, _ = train(g, net, output, search=False)
         retrain_end = time.time()
         restrainGat = "retrain gat time : {}".format(retrain_end - retrain_start)
         print(restrainGat)
