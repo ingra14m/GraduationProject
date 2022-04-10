@@ -8,6 +8,7 @@ from utils import Function as MyF
 from utils.radam import RAdam
 import models.EdgeClassfication as mynn
 
+
 '''
     model for edge classfication
 '''

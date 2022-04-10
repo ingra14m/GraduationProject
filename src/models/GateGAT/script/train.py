@@ -104,7 +104,7 @@ def plot_embeddings(embeddings, X, Y):
     plt.show()
 
 
-def train(g, net, output, search=True, isreTrain=False, eid=None):
+def train(g, net, output, search=True, eid=None):
     logits = 0
     gate = 0
     features = g.ndata['feature']
@@ -113,8 +113,7 @@ def train(g, net, output, search=True, isreTrain=False, eid=None):
     val_mask = g.edata['val_mask']
     test_mask = g.edata['test_mask']
 
-    optimizer = torch.optim.Adam(net.parameters(), lr=1e-2, weight_decay=5e-4)
-    lossFunction = nn.CrossEntropyLoss(reduction='mean')
+    optimizer = torch.optim.Adam(net.parameters(), lr=1e-3, weight_decay=5e-4)
     best_val_acc = 0
     best_test_acc = 0
     dur = []
@@ -196,22 +195,22 @@ def main(g, event_num, output):
                       in_dim=g.ndata['feature'].shape[1],
                       hidden_dim=1024,
                       out_dim=128,
-                      num_heads=8, out_classes=event_num, dot=False)
+                      num_heads=2, out_classes=event_num, dot=False)
 
-        _, gate = train(g, net, output, search=True)
+        _, gate = train(g, net, output, search=True)  # 得到的是所有边的得分
 
         # 第二阶段：retrain stage ：在 gate 的基础上，得出预测结果，验证模型
         print('------------------------retrain stage--------------------------')
-        # net = GAT(g,
-        #           in_dim=g.ndata['feature'].shape[1],
-        #           hidden_dim=8,
-        #           out_dim=7,
-        #           num_heads=8, out_classes=event_num)
+        net = GAT(g,
+                  in_dim=g.ndata['feature'].shape[1],
+                  hidden_dim=8,
+                  out_dim=7,
+                  num_heads=8, out_classes=event_num)
 
-        net = SAGEModel(in_features=g.ndata['feature'].shape[1],
-                        hidden_features=1024,
-                        out_features=128,
-                        out_classes=event_num)
+        # net = SAGEModel(in_features=g.ndata['feature'].shape[1],
+        #                 hidden_features=1024,
+        #                 out_features=128,
+        #                 out_classes=event_num)
         # 1.根据gate的结果，删除对应的边
 
         gate_np = gate.squeeze()
@@ -222,7 +221,8 @@ def main(g, event_num, output):
 
         # 2.训练，报告结果
         retrain_start = time.time()
-        h, _ = train(g, net, output, search=False, isreTrain=True, eid=delete_eids)
+        # h, _ = train(g, net, output, search=False, eid=delete_eids)
+        h, _ = train(g, net, output, search=False)
         retrain_end = time.time()
         restrainGat = "retrain gat time : {}".format(retrain_end - retrain_start)
         print(restrainGat)
