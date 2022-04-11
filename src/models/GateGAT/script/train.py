@@ -105,6 +105,7 @@ def plot_embeddings(embeddings, X, Y):
 
 
 def train(g, net, output, device, search=True, eid=None):
+    net.to(device)
     logits = 0
     gate = 0
 
