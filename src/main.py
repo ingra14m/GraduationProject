@@ -30,7 +30,6 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def train(model, graph, optimizer, output, add_self_loop=False):
     model.to(device)
-    graph.to(device)
 
     best_val_acc = 0
     best_test_acc = 0
@@ -117,6 +116,8 @@ if __name__ == "__main__":
 
     if args.gpu == False:
         device = torch.device("cpu")
+
+    graph.to(device)
 
     if args.model.upper() == 'GCN':
         # 用的是LeakyRelu
