@@ -26,8 +26,12 @@ SET_SPLIT = {
     "GRAPHSAGE": (33000, 35000)
 }
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def train(model, graph, optimizer, output, add_self_loop=False):
+    model.to(device)
+    graph.to(device)
+    
     best_val_acc = 0
     best_test_acc = 0
 
