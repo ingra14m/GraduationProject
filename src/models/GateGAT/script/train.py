@@ -137,7 +137,7 @@ def train(g, net, output, device, search=True, eid=None):
             if search:
                 logits, gate = net(g, features)
             else:
-                logits = net(g, features)
+                logits, _ = net(g, features)
             pred = logits.argmax(1)
 
             if search:
@@ -212,10 +212,10 @@ def main(g, event_num, output, device):
         # g.remove_edges(delete_eids)
 
         net = GAT(g,
-                  in_dim=g.ndata['feature'].shape[1],
-                  hidden_dim=1024,
-                  out_dim=128,
-                  num_heads=8, out_classes=event_num, delete_id=delete_eids)
+                  in_features=g.ndata['feature'].shape[1],
+                  hidden_features=1024,
+                  out_features=128,
+                  out_classes=event_num, delete_id=delete_eids)
 
         # net = SAGEModel(in_features=g.ndata['feature'].shape[1],
         #                 hidden_features=1024,

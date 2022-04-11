@@ -1,7 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import dgl
 import dgl.function as fn
+import dgl.nn.pytorch as dglnn
 
 
 # 这个显然是不会使用的
@@ -233,21 +235,53 @@ class GATMultiHeadGATLayer(nn.Module):
             return torch.mean(torch.stack(head_outs))
 
 
+# class GAT(nn.Module):
+#     def __init__(self, g, in_dim, hidden_dim, out_dim, num_heads, out_classes, delete_id):
+#         super(GAT, self).__init__()
+#         self.delete_id = delete_id
+#         self.delete_start = g.edges()[0][delete_id]
+#         self.delete_end = g.edges()[1][delete_id]
+#         self.layer1 = GATMultiHeadGATLayer(g, in_dim, hidden_dim, num_heads)
+#         self.layer2 = GATMultiHeadGATLayer(g, hidden_dim * num_heads, out_dim, 1)
+#
+#         self.pred = MLPEdgePredictor(out_dim, out_classes)
+#
+#     def forward(self, g, h):
+#         g.remove_edges(self.delete_id)
+#         h = self.layer1(h)
+#         h = F.leaky_relu(h)
+#         h = self.layer2(h)
+#         g.add_edges(self.delete_start, self.delete_end)
+#         return self.pred(g, h), None
+
+# dgl自带的GAT
+class GATBlock(nn.Module):
+    def __init__(self, in_feats, hid_feats, out_feats, num_heads=8):
+        super(GATBlock, self).__init__()
+        self.gat1 = dglnn.GATConv(in_feats=in_feats, out_feats=hid_feats, num_heads=num_heads)
+        self.gat2 = dglnn.GATConv(in_feats=hid_feats, out_feats=out_feats, num_heads=num_heads)
+
+    def forward(self, graph, inputs):
+        h = self.gat1(graph, inputs)
+        h = torch.mean(F.relu(h), dim=1)  # 多头的参数
+        h = self.gat2(graph, h)
+        return torch.mean(h, dim=1)
+
+
 class GAT(nn.Module):
-    def __init__(self, g, in_dim, hidden_dim, out_dim, num_heads, out_classes, delete_id):
-        super(GAT, self).__init__()
+    def __init__(self, g, in_features, hidden_features, out_features, out_classes, delete_id):
+        super().__init__()
         self.delete_id = delete_id
         self.delete_start = g.edges()[0][delete_id]
         self.delete_end = g.edges()[1][delete_id]
-        self.layer1 = GATMultiHeadGATLayer(g, in_dim, hidden_dim, num_heads)
-        self.layer2 = GATMultiHeadGATLayer(g, hidden_dim * num_heads, out_dim, 1)
 
-        self.pred = MLPEdgePredictor(out_dim, out_classes)
+        self.gat = GATBlock(in_features, hidden_features, out_features)
+        self.pred = MLPPredictor(out_features, out_classes)
 
-    def forward(self, g, h):
+    def forward(self, g, x):
+        g = dgl.add_self_loop(g)
         g.remove_edges(self.delete_id)
-        h = self.layer1(h)
-        h = F.leaky_relu(h)
-        h = self.layer2(h)
+        h = self.gat(g, x)
         g.add_edges(self.delete_start, self.delete_end)
-        return self.pred(g, h), None
+        g = dgl.remove_self_loop(g)
+        return self.pred(g, h)
