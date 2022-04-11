@@ -122,7 +122,7 @@ class GateGATLayer(nn.Module):
 
 
 class MultiHeadGATLayer(nn.Module):
-    def __init__(self, g, in_dim, out_dim, num_heads, merge='cat'):
+    def __init__(self, g, in_dim, out_dim, num_heads, merge='mean'):
         super(MultiHeadGATLayer, self).__init__()
         self.heads = nn.ModuleList()
         for i in range(num_heads):
