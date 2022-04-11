@@ -48,13 +48,17 @@ class MLPPredictor(nn.Module):
         s2 = self.W2(s1)
         score = self.W3(F.relu(s2))
 
-        score = score.detach().cpu()
-        s1 = score.numpy()  # 不计算梯度了，得到边的一个最终得分，成为了一个数组
+        s1 = score.detach().numpy()  # 不计算梯度了，得到边的一个最终得分，成为了一个数组
         max_num = max(s1)
         min_num = min(s1)
         # 归一化
-        score = (score - torch.tensor([min_num])) / (torch.tensor([max_num]) - torch.tensor([min_num]))
+        score = (s1 - torch.tensor([min_num])) / (torch.tensor([max_num]) - torch.tensor([min_num]))
         # 由于是apply_edges，因此将这一部分数据存储在edata['score']中
+
+        try:
+            score.to("cuda:0")
+        finally:
+            pass
         return {'score': score}
 
     def forward(self, h):
