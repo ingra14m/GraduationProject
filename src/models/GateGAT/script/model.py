@@ -234,17 +234,20 @@ class GATMultiHeadGATLayer(nn.Module):
 
 
 class GAT(nn.Module):
-    def __init__(self, g, in_dim, hidden_dim, out_dim, num_heads, out_classes):
+    def __init__(self, g, in_dim, hidden_dim, out_dim, num_heads, out_classes, delete_id):
         super(GAT, self).__init__()
+        self.delete_id = delete_id
+        self.delete_start = g.edges()[0][delete_id]
+        self.delete_end = g.edges()[1][delete_id]
         self.layer1 = GATMultiHeadGATLayer(g, in_dim, hidden_dim, num_heads)
         self.layer2 = GATMultiHeadGATLayer(g, hidden_dim * num_heads, out_dim, 1)
 
         self.pred = MLPEdgePredictor(out_dim, out_classes)
 
-    def forward(self, g, h, delete_eids):
-        g.remove_edges(delete_eids)
+    def forward(self, g, h):
+        g.remove_edges(self.delete_id)
         h = self.layer1(h)
         h = F.leaky_relu(h)
         h = self.layer2(h)
-        g.add_edges(delete_eids)
+        g.add_edges(self.delete_start, self.delete_end)
         return self.pred(g, h), None

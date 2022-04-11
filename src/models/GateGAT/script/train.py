@@ -121,7 +121,7 @@ def train(g, net, output, device, search=True, eid=None):
     dur = []
     # fp = open("logGAT.txt", "a+", encoding="utf-8")
     if search:
-        EPOCH = 2000  # previous 400
+        EPOCH = 5000  # previous 400
         # fp.write("Search Stage:\n")
     else:
         EPOCH = 5000  # previous 200
@@ -137,8 +137,7 @@ def train(g, net, output, device, search=True, eid=None):
             if search:
                 logits, gate = net(g, features)
             else:
-                eid.to(device)
-                logits = net(g, features, eid)
+                logits = net(g, features)
             pred = logits.argmax(1)
 
             if search:
@@ -197,23 +196,13 @@ def main(g, event_num, output, device):
         net = GateGAT(g,
                       in_dim=g.ndata['feature'].shape[1],
                       hidden_dim=512,
-                      out_dim=64,
+                      out_dim=128,
                       num_heads=2, out_classes=event_num, dot=False)
 
         _, gate = train(g, net, output, device, search=True)  # 得到的是所有边的得分
 
         # 第二阶段：retrain stage ：在 gate 的基础上，得出预测结果，验证模型
         print('------------------------retrain stage--------------------------')
-        net = GAT(g,
-                  in_dim=g.ndata['feature'].shape[1],
-                  hidden_dim=1024,
-                  out_dim=128,
-                  num_heads=8, out_classes=event_num)
-
-        # net = SAGEModel(in_features=g.ndata['feature'].shape[1],
-        #                 hidden_features=1024,
-        #                 out_features=128,
-        #                 out_classes=event_num)
         # 1.根据gate的结果，删除对应的边
 
         gate_np = gate.squeeze()
@@ -221,6 +210,18 @@ def main(g, event_num, output, device):
         position = int(len(gate_np) / delEdge)
         delete_eids = indices[0:position]
         # g.remove_edges(delete_eids)
+
+        net = GAT(g,
+                  in_dim=g.ndata['feature'].shape[1],
+                  hidden_dim=1024,
+                  out_dim=128,
+                  num_heads=8, out_classes=event_num, delete_id=delete_eids)
+
+        # net = SAGEModel(in_features=g.ndata['feature'].shape[1],
+        #                 hidden_features=1024,
+        #                 out_features=128,
+        #                 out_classes=event_num)
+
 
         # 2.训练，报告结果
         retrain_start = time.time()
