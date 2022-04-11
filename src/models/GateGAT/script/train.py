@@ -104,9 +104,13 @@ def plot_embeddings(embeddings, X, Y):
     plt.show()
 
 
-def train(g, net, output, search=True, eid=None):
+def train(g, net, output, device, search=True, eid=None):
     logits = 0
     gate = 0
+
+    g.to(device)
+    net.to(device)
+
     features = g.ndata['feature']
     labels = g.edata['label']
     train_mask = g.edata['train_mask']
@@ -198,9 +202,7 @@ def main(g, event_num, output, device):
                       out_dim=64,
                       num_heads=4, out_classes=event_num, dot=False)
 
-        net.to(device)
-
-        _, gate = train(g, net, output, search=True)  # 得到的是所有边的得分
+        _, gate = train(g, net, output, search=True, device)  # 得到的是所有边的得分
 
         # 第二阶段：retrain stage ：在 gate 的基础上，得出预测结果，验证模型
         print('------------------------retrain stage--------------------------')
@@ -209,8 +211,6 @@ def main(g, event_num, output, device):
                   hidden_dim=512,
                   out_dim=128,
                   num_heads=2, out_classes=event_num)
-
-        net.to(device)
 
         # net = SAGEModel(in_features=g.ndata['feature'].shape[1],
         #                 hidden_features=1024,
