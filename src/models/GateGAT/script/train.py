@@ -108,9 +108,6 @@ def train(g, net, output, device, search=True, eid=None):
     logits = 0
     gate = 0
 
-    g.to(device)
-    net.to(device)
-
     features = g.ndata['feature']
     labels = g.edata['label']
     train_mask = g.edata['train_mask']
@@ -137,10 +134,8 @@ def train(g, net, output, device, search=True, eid=None):
                 t0 = time.time()
 
             if search:
-                features.to(device)
                 logits, gate = net(g, features)
             else:
-                features.to(device)
                 eid.to(device)
                 logits = net(g, features, eid)
             pred = logits.argmax(1)
@@ -189,7 +184,6 @@ def train(g, net, output, device, search=True, eid=None):
 
 
 def main(g, event_num, output, device):
-    g.to(device)
     for delEdge in [5]:
         # 载入数据
         # data = citegrh.load_cora()

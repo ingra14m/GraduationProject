@@ -117,7 +117,7 @@ if __name__ == "__main__":
     if args.gpu == False:
         device = torch.device("cpu")
 
-    graph.to(device)
+    graph = graph.to(device)
 
     if args.model.upper() == 'GCN':
         # 用的是LeakyRelu
