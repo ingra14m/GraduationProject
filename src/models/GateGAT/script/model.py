@@ -136,7 +136,7 @@ class MultiHeadGATLayer(nn.Module):
             return torch.cat(head_outs, dim=1)
         else:
             # merge using average
-            return torch.mean(torch.stack(head_outs))
+            return torch.mean(torch.stack(head_outs), dim=0)
 
 
 class MLPEdgePredictor(nn.Module):
