@@ -196,9 +196,9 @@ def main(g, event_num, output, device):
         print('------------------------search stage--------------------------')
         net = GateGAT(g,
                       in_dim=g.ndata['feature'].shape[1],
-                      hidden_dim=256,
+                      hidden_dim=512,
                       out_dim=64,
-                      num_heads=4, out_classes=event_num, dot=False)
+                      num_heads=2, out_classes=event_num, dot=False)
 
         _, gate = train(g, net, output, device, search=True)  # 得到的是所有边的得分
 
@@ -206,9 +206,9 @@ def main(g, event_num, output, device):
         print('------------------------retrain stage--------------------------')
         net = GAT(g,
                   in_dim=g.ndata['feature'].shape[1],
-                  hidden_dim=512,
+                  hidden_dim=1024,
                   out_dim=128,
-                  num_heads=2, out_classes=event_num)
+                  num_heads=8, out_classes=event_num)
 
         # net = SAGEModel(in_features=g.ndata['feature'].shape[1],
         #                 hidden_features=1024,
@@ -224,7 +224,7 @@ def main(g, event_num, output, device):
 
         # 2.训练，报告结果
         retrain_start = time.time()
-        h, _ = train(g, net, output, search=False, eid=delete_eids)
+        h, _ = train(g, net, output, device, search=False, eid=delete_eids)
         # h, _ = train(g, net, output, search=False)
         retrain_end = time.time()
         restrainGat = "retrain gat time : {}".format(retrain_end - retrain_start)
