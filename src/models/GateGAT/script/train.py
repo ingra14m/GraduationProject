@@ -137,8 +137,11 @@ def train(g, net, output, device, search=True, eid=None):
                 t0 = time.time()
 
             if search:
+                features.to(device)
                 logits, gate = net(g, features)
             else:
+                features.to(device)
+                eid.to(device)
                 logits = net(g, features, eid)
             pred = logits.argmax(1)
 
@@ -202,7 +205,7 @@ def main(g, event_num, output, device):
                       out_dim=64,
                       num_heads=4, out_classes=event_num, dot=False)
 
-        _, gate = train(g, net, output, search=True, device)  # 得到的是所有边的得分
+        _, gate = train(g, net, output, device, search=True)  # 得到的是所有边的得分
 
         # 第二阶段：retrain stage ：在 gate 的基础上，得出预测结果，验证模型
         print('------------------------retrain stage--------------------------')
