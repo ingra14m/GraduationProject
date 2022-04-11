@@ -39,9 +39,9 @@ class MLPPredictor(nn.Module):
     def __init__(self, g, h_feats):
         super().__init__()
         self.g = g
-        self.W1 = nn.Linear(h_feats, 16)
-        self.W2 = nn.Linear(32, 8)
-        self.W3 = nn.Linear(8, 1)
+        self.W1 = nn.Linear(h_feats, 256)
+        self.W2 = nn.Linear(512, 64)
+        self.W3 = nn.Linear(64, 1)
 
     def apply_edges(self, edges):
         s1 = torch.cat([edges.src['h'], edges.dst['h']], 1)
@@ -168,7 +168,8 @@ class GateGAT(nn.Module):
             self.layer0 = MLPPredictor(g, in_dim)
 
         self.layer1 = MultiHeadGATLayer(g, in_dim, hidden_dim, num_heads)
-        self.layer2 = MultiHeadGATLayer(g, hidden_dim * num_heads, out_dim, 1)
+        # self.layer2 = MultiHeadGATLayer(g, hidden_dim * num_heads, out_dim, num_heads)
+        self.layer2 = MultiHeadGATLayer(g, hidden_dim, out_dim, num_heads)
         self.pred = MLPEdgePredictor(out_dim, out_classes)
 
     def forward(self, g, h):
@@ -232,7 +233,7 @@ class GATMultiHeadGATLayer(nn.Module):
             return torch.cat(head_outs, dim=1)
         else:
             # merge using average
-            return torch.mean(torch.stack(head_outs))
+            return torch.mean(torch.stack(head_outs), dim=0)
 
 
 # class GAT(nn.Module):
@@ -276,7 +277,7 @@ class GAT(nn.Module):
         self.delete_end = g.edges()[1][delete_id]
 
         self.gat = GATBlock(in_features, hidden_features, out_features)
-        self.pred = MLPPredictor(out_features, out_classes)
+        self.pred = MLPEdgePredictor(out_features, out_classes)
 
     def forward(self, g, x):
         g = dgl.add_self_loop(g)

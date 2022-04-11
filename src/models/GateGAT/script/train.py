@@ -137,7 +137,7 @@ def train(g, net, output, device, search=True, eid=None):
             if search:
                 logits, gate = net(g, features)
             else:
-                logits, _ = net(g, features)
+                logits = net(g, features)
             pred = logits.argmax(1)
 
             if search:
@@ -196,7 +196,7 @@ def main(g, event_num, output, device):
         net = GateGAT(g,
                       in_dim=g.ndata['feature'].shape[1],
                       hidden_dim=512,
-                      out_dim=128,
+                      out_dim=64,
                       num_heads=2, out_classes=event_num, dot=False)
 
         _, gate = train(g, net, output, device, search=True)  # 得到的是所有边的得分
