@@ -31,7 +31,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 def train(model, graph, optimizer, output, add_self_loop=False):
     model.to(device)
     graph.to(device)
-    
+
     best_val_acc = 0
     best_test_acc = 0
 
@@ -83,7 +83,7 @@ if __name__ == "__main__":
     # 启用这个之后，命令行似乎就不接受没有名字的参数了
     parser = argparse.ArgumentParser()
     parser.add_argument('-l', '--language', default='en')  # ch均可
-    parser.add_argument('-p', '--path', default='.')
+    parser.add_argument('-g', '--gpu', default=True)
     parser.add_argument('-o', '--output', default='ocr_result')
     parser.add_argument('-m', '--model', default='gcn')
     args = parser.parse_args()
@@ -115,6 +115,9 @@ if __name__ == "__main__":
     model = None
     optimizer = None
 
+    if args.gpu == False:
+        device = torch.device("cpu")
+
     if args.model.upper() == 'GCN':
         # 用的是LeakyRelu
         model = mynn.GCNModel(graph.ndata['feature'].shape[1], 1024, 128, event_num, norm=True)
@@ -133,7 +136,7 @@ if __name__ == "__main__":
     elif args.model.upper() == 'GATEGAT':
         from models.GateGAT.script import train as gate_train
 
-        gate_train.main(graph, event_num, args.output)
+        gate_train.main(graph, event_num, args.output, device)
 
     elif args.model.upper() == 'FASTGCN':
         pass

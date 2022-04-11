@@ -181,7 +181,8 @@ def train(g, net, output, search=True, eid=None):
     return logits, gate
 
 
-def main(g, event_num, output):
+def main(g, event_num, output, device):
+    g.to(device)
     for delEdge in [5]:
         # 载入数据
         # data = citegrh.load_cora()
@@ -197,6 +198,8 @@ def main(g, event_num, output):
                       out_dim=64,
                       num_heads=4, out_classes=event_num, dot=False)
 
+        net.to(device)
+
         _, gate = train(g, net, output, search=True)  # 得到的是所有边的得分
 
         # 第二阶段：retrain stage ：在 gate 的基础上，得出预测结果，验证模型
@@ -206,6 +209,8 @@ def main(g, event_num, output):
                   hidden_dim=512,
                   out_dim=128,
                   num_heads=2, out_classes=event_num)
+
+        net.to(device)
 
         # net = SAGEModel(in_features=g.ndata['feature'].shape[1],
         #                 hidden_features=1024,
