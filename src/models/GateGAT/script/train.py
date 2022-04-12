@@ -15,6 +15,7 @@ import argparse
 
 from .model import GAT
 from .model import GateGAT
+from .radam import RAdam
 
 # from GateGAT import GATE_GAT
 final_gate = None
@@ -76,12 +77,12 @@ class SAGEModel(nn.Module):
 
         self.sage = GraphSAGEBlock(in_features, hidden_features, out_features)
         self.sage2 = dglnn.SAGEConv(
-            in_feats=out_features, out_feats=out_features, aggregator_type=aggregator)
+            in_feats=out_features, out_feats=out_features, aggregator_type='mean')
         self.pred = MLPPredictor(out_features, out_classes)
 
     def forward(self, x):
         # for SAGE
-        h = F.relu(self.sage(self.g_delete, x))  # (572, out_features)
+        h = F.leaky_relu(self.sage(self.g_delete, x))  # (572, out_features)
         h = self.sage2(self.g_delete, h)
         # h = self.gat(x, g.edges())
         return self.pred(self.g_origin, h)
@@ -120,7 +121,8 @@ def train(g, net, output, device, search=True, eid=None):
     val_mask = g.edata['val_mask']
     test_mask = g.edata['test_mask']
 
-    optimizer = torch.optim.Adam(net.parameters(), lr=1e-3, weight_decay=5e-4)
+    # optimizer = torch.optim.Adam(net.parameters(), lr=1e-3, weight_decay=5e-4)
+    optimizer = RAdam(net.parameters(), lr=1e-4)
     best_val_acc = 0
     best_test_acc = 0
     dur = []
