@@ -270,19 +270,17 @@ class GATBlock(nn.Module):
 
 
 class GAT(nn.Module):
-    def __init__(self, g, in_features, hidden_features, out_features, out_classes, delete_id):
+    def __init__(self, g_delete, g_origin, in_features, hidden_features, out_features, out_classes, delete_id):
         super().__init__()
         self.delete_id = delete_id
-        self.delete_start = g.edges()[0][delete_id]
-        self.delete_end = g.edges()[1][delete_id]
+        # self.delete_start = g_origin.edges()[0][delete_id]
+        # self.delete_end = g_origin.edges()[1][delete_id]
+        self.g_origin = g_origin
+        self.g_delete = dgl.add_self_loop(g_delete.remove_edges(self.delete_id))
 
         self.gat = GATBlock(in_features, hidden_features, out_features)
         self.pred = MLPEdgePredictor(out_features, out_classes)
 
-    def forward(self, g, x):
-        g = dgl.add_self_loop(g)
-        g.remove_edges(self.delete_id)
-        h = self.gat(g, x)
-        g.add_edges(self.delete_start, self.delete_end)
-        g = dgl.remove_self_loop(g)
-        return self.pred(g, h)
+    def forward(self, x):
+        h = self.gat(self.g_delete, x)   # （572， *）得到节点的特征
+        return self.pred(self.g_origin, h)
