@@ -72,14 +72,17 @@ class SAGEModel(nn.Module):
         # self.delete_end = g_origin.edges()[1][delete_id]
         self.g_origin = g_origin
         g_delete.remove_edges(self.delete_id)
-        self.g_delete = dgl.add_self_loop(g_delete)
+        self.g_delete = g_delete
 
         self.sage = GraphSAGEBlock(in_features, hidden_features, out_features)
+        self.sage2 = dglnn.SAGEConv(
+            in_feats=out_features, out_feats=out_features, aggregator_type=aggregator)
         self.pred = MLPPredictor(out_features, out_classes)
 
     def forward(self, x):
         # for SAGE
-        h = self.sage(self.g_delete, x)  # (572, out_features)
+        h = F.relu(self.sage(self.g_delete, x))  # (572, out_features)
+        h = self.sage2(self.g_delete, h)
         # h = self.gat(x, g.edges())
         return self.pred(self.g_origin, h)
 
@@ -213,11 +216,11 @@ def main(g, event_num, output, device):
         delete_eids = indices[0:position]
         # g.remove_edges(delete_eids)
 
-        net = GAT(g, g,
-                  in_features=g.ndata['feature'].shape[1],
-                  hidden_features=1024,
-                  out_features=128,
-                  out_classes=event_num, delete_id=delete_eids)
+        # net = GAT(g, g,
+        #           in_features=g.ndata['feature'].shape[1],
+        #           hidden_features=1024,
+        #           out_features=128,
+        #           out_classes=event_num, delete_id=delete_eids)
 
         net = SAGEModel(g, g,
                         in_features=g.ndata['feature'].shape[1],
