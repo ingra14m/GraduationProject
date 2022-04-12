@@ -65,21 +65,23 @@ class GraphSAGEBlock(nn.Module):
 
 
 class SAGEModel(nn.Module):
-    def __init__(self, in_features, hidden_features, out_features, out_classes):
+    def __init__(self, g_origin, g_delete, in_features, hidden_features, out_features, out_classes, delete_id):
         super().__init__()
+        self.delete_id = delete_id
+        # self.delete_start = g_origin.edges()[0][delete_id]
+        # self.delete_end = g_origin.edges()[1][delete_id]
+        self.g_origin = g_origin
+        g_delete.remove_edges(self.delete_id)
+        self.g_delete = dgl.add_self_loop(g_delete)
+
         self.sage = GraphSAGEBlock(in_features, hidden_features, out_features)
-        # self.gat = GAT(input_dim=in_features, hidden_dim=hidden_features, output_dim=out_features, num_heads=8,
-        #                dropout=0.6, alpha=0.4)
-        # self.pred = DotProductPredictor()  # 边回归问题
         self.pred = MLPPredictor(out_features, out_classes)
 
-    def forward(self, g, x, delete_eids):
+    def forward(self, x):
         # for SAGE
-        g.remove_edges(delete_eids)
-        h = self.sage(g, x)  # (572, out_features)
-        g.add_edges(delete_eids)
+        h = self.sage(self.g_delete, x)  # (572, out_features)
         # h = self.gat(x, g.edges())
-        return self.pred(g, h)
+        return self.pred(self.g_origin, h)
 
 
 def plot_embeddings(embeddings, X, Y):
@@ -124,7 +126,7 @@ def train(g, net, output, device, search=True, eid=None):
         EPOCH = 5000  # previous 400
         # fp.write("Search Stage:\n")
     else:
-        EPOCH = 5000  # previous 200
+        EPOCH = 50000  # previous 200
         # if isreTrain:
         #     fp.write("reTrain GAT Stage:\n")
         # else:
@@ -137,7 +139,7 @@ def train(g, net, output, device, search=True, eid=None):
             if search:
                 logits, gate = net(g, features)
             else:
-                logits = net(g, features)
+                logits = net(features)
             pred = logits.argmax(1)
 
             if search:
@@ -217,10 +219,11 @@ def main(g, event_num, output, device):
                   out_features=128,
                   out_classes=event_num, delete_id=delete_eids)
 
-        # net = SAGEModel(in_features=g.ndata['feature'].shape[1],
-        #                 hidden_features=1024,
-        #                 out_features=128,
-        #                 out_classes=event_num)
+        net = SAGEModel(g, g,
+                        in_features=g.ndata['feature'].shape[1],
+                        hidden_features=1024,
+                        out_features=128,
+                        out_classes=event_num, delete_id=delete_eids)
 
 
         # 2.训练，报告结果

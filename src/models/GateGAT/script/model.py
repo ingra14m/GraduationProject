@@ -276,7 +276,8 @@ class GAT(nn.Module):
         # self.delete_start = g_origin.edges()[0][delete_id]
         # self.delete_end = g_origin.edges()[1][delete_id]
         self.g_origin = g_origin
-        self.g_delete = dgl.add_self_loop(g_delete.remove_edges(self.delete_id))
+        g_delete.remove_edges(self.delete_id)
+        self.g_delete = dgl.add_self_loop(g_delete)
 
         self.gat = GATBlock(in_features, hidden_features, out_features)
         self.pred = MLPEdgePredictor(out_features, out_classes)
