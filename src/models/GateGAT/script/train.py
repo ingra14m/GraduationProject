@@ -1,3 +1,5 @@
+import os.path
+
 import dgl
 import torch
 import torch.nn.functional as F
@@ -219,33 +221,35 @@ def main(g, event_num, output, device):
                       out_classes=event_num,
                       dot=False)
 
-        _, gate = train(g, net, output, device, search=True)  # 得到的是所有边的得分
+        if os.path.exists("gategraph2.pt"):
+            indices = torch.load("gategraph.pt")
+        else:
+            _, gate = train(g, net, output, device, search=True)  # 得到的是所有边的得分
+            gate_np = gate.squeeze()
+            _, indices = torch.sort(gate_np)
+            torch.save(indices, "gategraph2.pt")
 
         # 第二阶段：retrain stage ：在 gate 的基础上，得出预测结果，验证模型
         print(
             '------------------------retrain stage--------------------------')
         # 1.根据gate的结果，删除对应的边
-
-        gate_np = gate.squeeze()
-        _, indices = torch.sort(gate_np)
-        torch.save(indices, "gategraph2.pt")
-        position = int(len(gate_np) / delEdge)
+        position = int(len(indices) / delEdge)
         delete_eids = indices[0:position]
         # g.remove_edges(delete_eids)
 
-        # net = GAT(g, g,
-        #           in_features=g.ndata['feature'].shape[1],
-        #           hidden_features=1024,
-        #           out_features=128,
-        #           out_classes=event_num, delete_id=delete_eids)
+        net = GAT(g, g,
+                  in_features=g.ndata['feature'].shape[1],
+                  hidden_features=1024,
+                  out_features=128,
+                  out_classes=event_num, delete_id=delete_eids)
 
-        net = SAGEModel(g,
-                        g,
-                        in_features=g.ndata['feature'].shape[1],
-                        hidden_features=1024,
-                        out_features=128,
-                        out_classes=event_num,
-                        delete_id=delete_eids)
+        # net = SAGEModel(g,
+        #                 g,
+        #                 in_features=g.ndata['feature'].shape[1],
+        #                 hidden_features=1024,
+        #                 out_features=128,
+        #                 out_classes=event_num,
+        #                 delete_id=delete_eids)
 
         # 2.训练，报告结果
         retrain_start = time.time()
