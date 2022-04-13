@@ -21,7 +21,7 @@ GNN_MODEL = {
 }
 
 SET_SPLIT = {
-    "GATEGAT": (30000, 34000),
+    "GATEGAT": (33000, 35000),
     "GAT": (30000, 34000),
     "GRAPHSAGE": (33000, 35000)
 }

@@ -51,11 +51,13 @@ class GraphSAGEBlock(nn.Module):
 
     def __init__(self, in_feats, hid_feats, out_feats):
         super().__init__()
-        self.conv1 = dglnn.SAGEConv(
-            in_feats=in_feats, out_feats=hid_feats, aggregator_type='mean')
+        self.conv1 = dglnn.SAGEConv(in_feats=in_feats,
+                                    out_feats=hid_feats,
+                                    aggregator_type='mean')
 
-        self.conv2 = dglnn.SAGEConv(
-            in_feats=hid_feats, out_feats=out_feats, aggregator_type='mean')
+        self.conv2 = dglnn.SAGEConv(in_feats=hid_feats,
+                                    out_feats=out_feats,
+                                    aggregator_type='mean')
 
     def forward(self, graph, inputs):
         # inputs are features of nodes
@@ -66,7 +68,8 @@ class GraphSAGEBlock(nn.Module):
 
 
 class SAGEModel(nn.Module):
-    def __init__(self, g_origin, g_delete, in_features, hidden_features, out_features, out_classes, delete_id):
+    def __init__(self, g_origin, g_delete, in_features, hidden_features,
+                 out_features, out_classes, delete_id):
         super().__init__()
         self.delete_id = delete_id
         # self.delete_start = g_origin.edges()[0][delete_id]
@@ -76,14 +79,14 @@ class SAGEModel(nn.Module):
         self.g_delete = g_delete
 
         self.sage = GraphSAGEBlock(in_features, hidden_features, out_features)
-        self.sage2 = dglnn.SAGEConv(
-            in_feats=out_features, out_feats=out_features, aggregator_type='mean')
+        #self.sage2 = dglnn.SAGEConv(
+        #    in_feats=out_features, out_feats=out_features, aggregator_type='mean')
         self.pred = MLPPredictor(out_features, out_classes)
 
     def forward(self, x):
         # for SAGE
-        h = F.leaky_relu(self.sage(self.g_delete, x))  # (572, out_features)
-        h = self.sage2(self.g_delete, h)
+        h = self.sage(self.g_delete, x)  # (572, out_features)
+        #h = self.sage2(self.g_delete, h)
         # h = self.gat(x, g.edges())
         return self.pred(self.g_origin, h)
 
@@ -122,7 +125,10 @@ def train(g, net, output, device, search=True, eid=None):
     test_mask = g.edata['test_mask']
 
     # optimizer = torch.optim.Adam(net.parameters(), lr=1e-3, weight_decay=5e-4)
-    optimizer = RAdam(net.parameters(), lr=1e-4)
+    if search:
+        optimizer = RAdam(net.parameters(), lr=1e-3, weight_decay=5e-4)
+    else:
+        optimizer = RAdam(net.parameters(), lr=1e-4)
     best_val_acc = 0
     best_test_acc = 0
     dur = []
@@ -131,7 +137,7 @@ def train(g, net, output, device, search=True, eid=None):
         EPOCH = 5000  # previous 400
         # fp.write("Search Stage:\n")
     else:
-        EPOCH = 50000  # previous 200
+        EPOCH = 20000  # previous 200
         # if isreTrain:
         #     fp.write("reTrain GAT Stage:\n")
         # else:
@@ -149,14 +155,18 @@ def train(g, net, output, device, search=True, eid=None):
 
             if search:
                 loss = F.cross_entropy(logits, labels)
-                train_acc = (pred[train_mask] == labels[train_mask]).float().mean()
+                train_acc = (
+                    pred[train_mask] == labels[train_mask]).float().mean()
                 val_acc = (pred[val_mask] == labels[val_mask]).float().mean()
-                test_acc = (pred[test_mask] == labels[test_mask]).float().mean()
+                test_acc = (
+                    pred[test_mask] == labels[test_mask]).float().mean()
             else:
                 loss = F.cross_entropy(logits[train_mask], labels[train_mask])
-                train_acc = (pred[train_mask] == labels[train_mask]).float().mean()
+                train_acc = (
+                    pred[train_mask] == labels[train_mask]).float().mean()
                 val_acc = (pred[val_mask] == labels[val_mask]).float().mean()
-                test_acc = (pred[test_mask] == labels[test_mask]).float().mean()
+                test_acc = (
+                    pred[test_mask] == labels[test_mask]).float().mean()
 
             if best_val_acc < val_acc:
                 best_val_acc = val_acc
@@ -174,7 +184,8 @@ def train(g, net, output, device, search=True, eid=None):
                 #         epoch, loss.item(), train_acc, np.mean(dur)))
                 # else:
                 expLog = 'Epoch {:05d} | Loss: {:.3f} | train acc: {:.3f} | val acc: {:.3f} (best {:.3f}) | test acc: {:.3f} (best {:.3f}) | Time(s) {:.4f}'.format(
-                    epoch, loss, train_acc, val_acc, best_val_acc, test_acc, best_test_acc, np.mean(dur))
+                    epoch, loss, train_acc, val_acc, best_val_acc, test_acc,
+                    best_test_acc, np.mean(dur))
                 print(expLog)
                 f.write(expLog + '\n')
 
@@ -204,16 +215,20 @@ def main(g, event_num, output, device):
                       in_dim=g.ndata['feature'].shape[1],
                       hidden_dim=512,
                       out_dim=64,
-                      num_heads=2, out_classes=event_num, dot=False)
+                      num_heads=2,
+                      out_classes=event_num,
+                      dot=False)
 
         _, gate = train(g, net, output, device, search=True)  # 得到的是所有边的得分
 
         # 第二阶段：retrain stage ：在 gate 的基础上，得出预测结果，验证模型
-        print('------------------------retrain stage--------------------------')
+        print(
+            '------------------------retrain stage--------------------------')
         # 1.根据gate的结果，删除对应的边
 
         gate_np = gate.squeeze()
         _, indices = torch.sort(gate_np)
+        torch.save(indices, "gategraph2.pt")
         position = int(len(gate_np) / delEdge)
         delete_eids = indices[0:position]
         # g.remove_edges(delete_eids)
@@ -224,17 +239,19 @@ def main(g, event_num, output, device):
         #           out_features=128,
         #           out_classes=event_num, delete_id=delete_eids)
 
-        net = SAGEModel(g, g,
+        net = SAGEModel(g,
+                        g,
                         in_features=g.ndata['feature'].shape[1],
                         hidden_features=1024,
                         out_features=128,
-                        out_classes=event_num, delete_id=delete_eids)
-
+                        out_classes=event_num,
+                        delete_id=delete_eids)
 
         # 2.训练，报告结果
         retrain_start = time.time()
         h, _ = train(g, net, output, device, search=False, eid=delete_eids)
         # h, _ = train(g, net, output, search=False)
         retrain_end = time.time()
-        restrainGat = "retrain gat time : {}".format(retrain_end - retrain_start)
+        restrainGat = "retrain gat time : {}".format(retrain_end -
+                                                     retrain_start)
         print(restrainGat)
