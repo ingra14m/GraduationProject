@@ -24,18 +24,18 @@ class MLPPredictor(nn.Module):
         super().__init__()
         self.softmax = softmax
         self.W1 = nn.Linear(in_features * 2, 256)
-        self.BN1 = nn.BatchNorm1d(256)
+        # self.BN1 = nn.BatchNorm1d(256)
         self.W2 = nn.Linear(256, 128)
-        self.BN2 = nn.BatchNorm1d(128)
+        # self.BN2 = nn.BatchNorm1d(128)
         self.W3 = nn.Linear(128, out_classes)
 
     def apply_edges(self, edges):
         h_u = edges.src['h']
         h_v = edges.dst['h']
         score = F.leaky_relu(self.W1(torch.cat([h_u, h_v], 1)))  # (74528， 1024)
-        score = self.BN1(score)
+        # score = self.BN1(score)
         score = F.leaky_relu(self.W2(score))
-        score = self.BN2(score)
+        # score = self.BN2(score)
         if self.softmax:
             score = nn.functional.softmax(self.W3(score), dim=0)
         else:
