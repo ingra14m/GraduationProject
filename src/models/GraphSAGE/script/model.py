@@ -39,18 +39,29 @@ class GraphSAGEBlock(nn.Module):
         super().__init__()
         self.conv1 = dglnn.SAGEConv(
             in_feats=in_feats, out_feats=hid_feats, aggregator_type=aggregator)
-        self.BN1 = nn.BatchNorm1d(hid_feats)
+        # self.BN1 = nn.BatchNorm1d(hid_feats)
         self.conv2 = dglnn.SAGEConv(
             in_feats=hid_feats, out_feats=out_feats, aggregator_type=aggregator)
-        self.BN2 = nn.BatchNorm1d(out_feats)
+
+        # self.BN2 = nn.BatchNorm1d(out_feats)
 
     def forward(self, graph, inputs):
         # inputs are features of nodes
         h = self.conv1(graph, inputs)
-        h = self.BN1(h)
+        # h = self.BN1(h)
         h = F.relu(h)
         h = self.conv2(graph, h)
-        h = self.BN2(h)
+        #
+        # self.relation = torch.tensor((2, 4), dtype=torch.int32)
+        # # 计算关联度的loss
+        # loss_relation = F.cross_entropy(self.relation, h)
+        #
+        # extract = nn.Linear()
+        # pred = extract(h)
+        # # 计算开盘价的loss
+        # loss_price = F.cross_entropy(pred, label)
+
+        # h = self.BN2(h)
         return h
 
 # class SAGEGCN(nn.Module):

@@ -7,7 +7,7 @@ from utils.PreProcessing import *
 from utils import Function as MyF
 from utils.radam import RAdam
 import models.EdgeClassfication as mynn
-
+from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score, roc_auc_score
 
 '''
     model for edge classfication
@@ -23,10 +23,12 @@ GNN_MODEL = {
 SET_SPLIT = {
     "GATEGAT": (33000, 35000),
     "GAT": (30000, 34000),
-    "GRAPHSAGE": (33000, 35000)
+    "GRAPHSAGE": (33000, 35000),
+    "GCN": (33000, 35000)
 }
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 
 def train(model, graph, optimizer, output, add_self_loop=False):
     model.to(device)
@@ -56,9 +58,14 @@ def train(model, graph, optimizer, output, add_self_loop=False):
             #     result2 = np.array(pred[train_mask].argmax(1))
             #     np.savetxt('npresult2.txt', result2)
 
-            train_acc = MyF.Accuracy(pred[train_mask], edata_label[train_mask])
-            val_acc = MyF.Accuracy(pred[val_mask], edata_label[val_mask])
-            test_acc = MyF.Accuracy(pred[test_mask], edata_label[test_mask])
+            result_label, result_pred = MyF.GetLabel(pred, edata_label)
+
+            # train_acc = MyF.Accuracy(pred[train_mask], edata_label[train_mask])
+            # val_acc = MyF.Accuracy(pred[val_mask], edata_label[val_mask])
+            # test_acc = MyF.Accuracy(pred[test_mask], edata_label[test_mask])
+            train_acc = accuracy_score(result_label[train_mask], result_pred[train_mask])
+            val_acc = accuracy_score(result_label[val_mask], result_pred[val_mask])
+            test_acc = accuracy_score(result_label[test_mask], result_pred[test_mask])
 
             # Save the best validation accuracy and the corresponding test accuracy.
             if best_val_acc < val_acc:
@@ -73,8 +80,24 @@ def train(model, graph, optimizer, output, add_self_loop=False):
             if epoch % 5 == 0:
                 content = 'In epoch {}, loss: {:.3f},train acc: {:.3f}, val acc: {:.3f} (best {:.3f}), test acc: {:.3f} (best {:.3f})'.format(
                     epoch, loss, train_acc, val_acc, best_val_acc, test_acc, best_test_acc)
+                quality = 'recall: {:.4f}, {:.4f}, {:.4f}\nprecision: {:.4f}, {:.4f}, {:.4f}\nf1: {:.4f}, {:.4f}, {:.4f}\nauc: {:.4f}, {:.4f}, {:.4f}\n'.format(
+                    recall_score(result_label[train_mask], result_pred[train_mask], average='micro'),
+                    recall_score(result_label[val_mask], result_pred[val_mask], average='micro'),
+                    recall_score(result_label[test_mask], result_pred[test_mask], average='micro'),
+                    precision_score(result_label[train_mask], result_pred[train_mask], average='micro'),
+                    precision_score(result_label[val_mask], result_pred[val_mask], average='micro'),
+                    precision_score(result_label[test_mask], result_pred[test_mask], average='micro'),
+                    f1_score(result_label[train_mask], result_pred[train_mask], average='micro'),
+                    f1_score(result_label[val_mask], result_pred[val_mask], average='micro'),
+                    f1_score(result_label[test_mask], result_pred[test_mask], average='micro'),
+                    roc_auc_score(result_label[train_mask], result_pred[train_mask]),
+                    roc_auc_score(result_label[val_mask], result_pred[val_mask]),
+                    roc_auc_score(result_label[test_mask], result_pred[test_mask]),
+                )
                 print(content)
+                print(quality)
                 f.write(content + '\n')
+                f.write(quality + '\n')
         f.close()
 
 

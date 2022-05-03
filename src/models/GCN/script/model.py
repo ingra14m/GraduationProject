@@ -35,7 +35,6 @@ class GCNBlock2(nn.Module):
         super(GCNBlock2, self).__init__()
         self.conv1 = dglnn.GraphConv(in_feats=in_feats, out_feats=hid_feats)
         self.conv2 = dglnn.GraphConv(in_feats=hid_feats, out_feats=out_feats)
-        dglnn.APPNPConvw
 
     def forward(self, graph, inputs):
         # inputs are features of nodes
