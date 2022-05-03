@@ -81,7 +81,7 @@ def train(model, graph, optimizer, output, add_self_loop=False):
                 auc_input = nn.functional.softmax(pred, dim=1)
                 content = 'In epoch {}, loss: {:.3f},train acc: {:.3f}, val acc: {:.3f} (best {:.3f}), test acc: {:.3f} (best {:.3f})'.format(
                     epoch, loss, train_acc, val_acc, best_val_acc, test_acc, best_test_acc)
-                quality = 'recall: {:.4f}, {:.4f}, {:.4f}\nprecision: {:.4f}, {:.4f}, {:.4f}\nf1: {:.4f}, {:.4f}, {:.4f}\nauc: {:.4f}, {:.4f}, {:.4f}\n'.format(
+                quality = 'recall: {:.4f}, {:.4f}, {:.4f}\nprecision: {:.4f}, {:.4f}, {:.4f}\nf1: {:.4f}, {:.4f}, {:.4f}\nauc: {:.4f}\n'.format(
                     recall_score(result_label[train_mask], result_pred[train_mask], average='weighted'),
                     recall_score(result_label[val_mask], result_pred[val_mask], average='weighted'),
                     recall_score(result_label[test_mask], result_pred[test_mask], average='weighted'),
