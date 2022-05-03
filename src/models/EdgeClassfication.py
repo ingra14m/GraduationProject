@@ -60,7 +60,7 @@ class SAGEModel(nn.Module):
         # self.gat = GAT(input_dim=in_features, hidden_dim=hidden_features, output_dim=out_features, num_heads=8,
         #                dropout=0.6, alpha=0.4)
         # self.pred = DotProductPredictor()  # 边回归问题
-        self.pred = MLPPredictor(out_features, out_classes, softmax=True)
+        self.pred = MLPPredictor(out_features, out_classes)
 
     def forward(self, g, x):
         # for SAGE
@@ -75,7 +75,7 @@ class GATModel(nn.Module):
         super().__init__()
         # self.gat = GAT(in_features, hidden_features, out_features, num_heads=8, dropout=0.6, alpha=0.2)
         self.gat = GATBlock(in_features, hidden_features, out_features)
-        self.pred = MLPPredictor(out_features, out_classes, softmax=True)
+        self.pred = MLPPredictor(out_features, out_classes)
 
     def forward(self, g, x):
         g = dgl.add_self_loop(g)
@@ -92,7 +92,7 @@ class GCNModel(nn.Module):
             self.gcn = GCNBlock2(in_features, hidden_features, out_features)
         else:
             self.gcn = GCNBlock(in_features, hidden_features, out_features)
-        self.pred = MLPPredictor(out_features, out_classes, softmax=True)
+        self.pred = MLPPredictor(out_features, out_classes)
 
     def forward(self, g, x):
         if self.norm:
