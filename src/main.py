@@ -90,9 +90,9 @@ def train(model, graph, optimizer, output, add_self_loop=False):
                     f1_score(result_label[train_mask], result_pred[train_mask], average='weighted'),
                     f1_score(result_label[val_mask], result_pred[val_mask], average='weighted'),
                     f1_score(result_label[test_mask], result_pred[test_mask], average='weighted'),
-                    roc_auc_score(result_label[train_mask], result_pred[train_mask]),
-                    roc_auc_score(result_label[val_mask], result_pred[val_mask]),
-                    roc_auc_score(result_label[test_mask], result_pred[test_mask]),
+                    roc_auc_score(result_label[train_mask], result_pred[train_mask], multi_class='ovr'),
+                    roc_auc_score(result_label[val_mask], result_pred[val_mask], multi_class='ovr'),
+                    roc_auc_score(result_label[test_mask], result_pred[test_mask], multi_class='ovr'),
                 )
                 print(content)
                 print(quality)
