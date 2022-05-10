@@ -1,3 +1,5 @@
+import time
+
 import torch
 import torch.nn as nn
 import argparse
@@ -8,6 +10,7 @@ from utils import Function as MyF
 from utils.radam import RAdam
 import models.EdgeClassfication as mynn
 from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score, roc_auc_score
+from utils.FocalLoss import FocalLoss
 
 '''
     model for edge classfication
@@ -42,6 +45,8 @@ def train(model, graph, optimizer, output, add_self_loop=False):
     val_mask = graph.edata['val_mask'].cpu()
     test_mask = graph.edata['test_mask'].cpu()
 
+    loss_function = FocalLoss(65)
+
     # if add_self_loop:
     #     graph = dgl.add_self_loop(graph)
     #     graph.ndata['adj'] = graph.adjacency_matrix()
@@ -51,7 +56,9 @@ def train(model, graph, optimizer, output, add_self_loop=False):
         for epoch in range(5000):
             pred = model(graph, ndata_features)
             # loss = ((pred[train_mask] - edata_label[train_mask]) ** 2).mean()
-            loss = F.cross_entropy(pred[graph.edata['train_mask']], edata_label[graph.edata['train_mask']])
+
+            # loss = F.cross_entropy(pred[graph.edata['train_mask']], edata_label[graph.edata['train_mask']])
+            loss = loss_function(pred[graph.edata['train_mask']], edata_label[graph.edata['train_mask']])
             # if epoch == 30:
             #     result1 = np.array(edata_label[train_mask])
             #     np.savetxt('npresult1.txt', result1)
@@ -73,14 +80,16 @@ def train(model, graph, optimizer, output, add_self_loop=False):
             if best_test_acc < test_acc:
                 best_test_acc = test_acc
 
+            t0 = time.time()
+
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
             if epoch % 5 == 0:
                 auc_input = nn.functional.softmax(pred, dim=1)
-                content = 'In epoch {}, loss: {:.3f},train acc: {:.3f}, val acc: {:.3f} (best {:.3f}), test acc: {:.3f} (best {:.3f})'.format(
-                    epoch, loss, train_acc, val_acc, best_val_acc, test_acc, best_test_acc)
+                content = 'In epoch {}, loss: {:.3f},train acc: {:.3f}, val acc: {:.3f} (best {:.3f}), test acc: {:.3f} (best {:.3f}), {}'.format(
+                    epoch, loss, train_acc, val_acc, best_val_acc, test_acc, best_test_acc, time.time() - t0)
                 quality = 'recall: {:.4f}, {:.4f}, {:.4f}\nprecision: {:.4f}, {:.4f}, {:.4f}\nf1: {:.4f}, {:.4f}, {:.4f}\nauc: {:.4f}\n'.format(
                     recall_score(result_label[train_mask], result_pred[train_mask], average='weighted'),
                     recall_score(result_label[val_mask], result_pred[val_mask], average='weighted'),
@@ -99,6 +108,7 @@ def train(model, graph, optimizer, output, add_self_loop=False):
                 print(quality)
                 f.write(content + '\n')
                 f.write(quality + '\n')
+                t0 = time.time()
         f.close()
 
 
@@ -108,7 +118,7 @@ if __name__ == "__main__":
     parser.add_argument('-l', '--language', default='en')  # ch均可
     parser.add_argument('-g', '--gpu', default=True)
     parser.add_argument('-o', '--output', default='ocr_result')
-    parser.add_argument('-m', '--model', default='gcn')
+    parser.add_argument('-m', '--model', default='graphsage')
     args = parser.parse_args()
 
     df_drug, mechanism, action, drugA, drugB = data_import()
