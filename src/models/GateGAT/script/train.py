@@ -5,6 +5,8 @@ import torch
 import torch.nn.functional as F
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
+from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score, roc_auc_score
+import Function as MyF
 
 from dgl.data import citation_graph as citegrh
 
@@ -121,10 +123,10 @@ def train(g, net, output, device, search=True, eid=None):
     gate = 0
 
     features = g.ndata['feature']
-    labels = g.edata['label']
-    train_mask = g.edata['train_mask']
-    val_mask = g.edata['val_mask']
-    test_mask = g.edata['test_mask']
+    labels = g.edata['label'].cpu()
+    train_mask = g.edata['train_mask'].cpu()
+    val_mask = g.edata['val_mask'].cpu()
+    test_mask = g.edata['test_mask'].cpu()
 
     # optimizer = torch.optim.Adam(net.parameters(), lr=1e-3, weight_decay=5e-4)
     if search:
@@ -155,6 +157,8 @@ def train(g, net, output, device, search=True, eid=None):
                 logits = net(features)
             pred = logits.argmax(1)
 
+            result_label, result_pred = MyF.GetLabel(pred, labels)
+
             if search:
                 loss = F.cross_entropy(logits, labels)
                 train_acc = (
@@ -180,6 +184,7 @@ def train(g, net, output, device, search=True, eid=None):
             optimizer.step()
 
             if epoch % 5 == 0:
+                auc_input = nn.functional.softmax(pred, dim=1)
                 dur.append(time.time() - t0)
                 # if search:
                 #     print("Epoch {:05d} | Loss {:.4f} | train acc: {:.3f}| Time(s) {:.4f}".format(
@@ -189,7 +194,21 @@ def train(g, net, output, device, search=True, eid=None):
                     epoch, loss, train_acc, val_acc, best_val_acc, test_acc,
                     best_test_acc, np.mean(dur))
                 print(expLog)
+
+                quality = 'recall: {:.4f}, {:.4f}, {:.4f}\nprecision: {:.4f}, {:.4f}, {:.4f}\nf1: {:.4f}, {:.4f}, {:.4f}\nauc: {:.4f}\n'.format(
+                    recall_score(result_label[train_mask], result_pred[train_mask], average='weighted'),
+                    recall_score(result_label[val_mask], result_pred[val_mask], average='weighted'),
+                    recall_score(result_label[test_mask], result_pred[test_mask], average='weighted'),
+                    precision_score(result_label[train_mask], result_pred[train_mask], average='weighted'),
+                    precision_score(result_label[val_mask], result_pred[val_mask], average='weighted'),
+                    precision_score(result_label[test_mask], result_pred[test_mask], average='weighted'),
+                    f1_score(result_label[train_mask], result_pred[train_mask], average='weighted'),
+                    f1_score(result_label[val_mask], result_pred[val_mask], average='weighted'),
+                    f1_score(result_label[test_mask], result_pred[test_mask], average='weighted'),
+                    roc_auc_score(result_label, auc_input.cpu().data.numpy(), multi_class='ovr'))
+                
                 f.write(expLog + '\n')
+                f.write(quality + '\n')
 
         f.close()
 
