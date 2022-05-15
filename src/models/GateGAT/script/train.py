@@ -123,7 +123,7 @@ def train(g, net, output, device, search=True, eid=None):
     gate = 0
 
     features = g.ndata['feature']
-    labels = g.edata['label'].cpu()
+    labels = g.edata['label']
     train_mask = g.edata['train_mask'].cpu()
     val_mask = g.edata['val_mask'].cpu()
     test_mask = g.edata['test_mask'].cpu()
@@ -160,14 +160,14 @@ def train(g, net, output, device, search=True, eid=None):
             result_label, result_pred = GetLabel(logits, labels)
 
             if search:
-                loss = F.cross_entropy(logits, result_label)
+                loss = F.cross_entropy(logits, labels)
                 train_acc = (
                     result_pred[train_mask] == result_label[train_mask]).float().mean()
                 val_acc = (result_pred[val_mask] == result_label[val_mask]).float().mean()
                 test_acc = (
                     result_pred[test_mask] == result_label[test_mask]).float().mean()
             else:
-                loss = F.cross_entropy(logits[train_mask], result_label[train_mask])
+                loss = F.cross_entropy(logits[train_mask], labels[train_mask])
                 train_acc = (
                     result_pred[train_mask] == result_label[train_mask]).float().mean()
                 val_acc = (result_pred[val_mask] == result_label[val_mask]).float().mean()
