@@ -155,24 +155,24 @@ def train(g, net, output, device, search=True, eid=None):
                 logits, gate = net(g, features)
             else:
                 logits = net(features)
-            pred = logits.argmax(1)
+            # pred = logits.argmax(1)
 
-            result_label, result_pred = GetLabel(pred, labels)
+            result_label, result_pred = GetLabel(logits, labels)
 
             if search:
-                loss = F.cross_entropy(logits, labels)
+                loss = F.cross_entropy(logits, result_label)
                 train_acc = (
-                    pred[train_mask] == labels[train_mask]).float().mean()
-                val_acc = (pred[val_mask] == labels[val_mask]).float().mean()
+                    result_pred[train_mask] == result_label[train_mask]).float().mean()
+                val_acc = (result_pred[val_mask] == result_label[val_mask]).float().mean()
                 test_acc = (
-                    pred[test_mask] == labels[test_mask]).float().mean()
+                    result_pred[test_mask] == result_label[test_mask]).float().mean()
             else:
-                loss = F.cross_entropy(logits[train_mask], labels[train_mask])
+                loss = F.cross_entropy(logits[train_mask], result_label[train_mask])
                 train_acc = (
-                    pred[train_mask] == labels[train_mask]).float().mean()
-                val_acc = (pred[val_mask] == labels[val_mask]).float().mean()
+                    result_pred[train_mask] == result_label[train_mask]).float().mean()
+                val_acc = (result_pred[val_mask] == result_label[val_mask]).float().mean()
                 test_acc = (
-                    pred[test_mask] == labels[test_mask]).float().mean()
+                    result_pred[test_mask] == result_label[test_mask]).float().mean()
 
             if best_val_acc < val_acc:
                 best_val_acc = val_acc
@@ -184,7 +184,7 @@ def train(g, net, output, device, search=True, eid=None):
             optimizer.step()
 
             if epoch % 5 == 0:
-                auc_input = nn.functional.softmax(pred, dim=1)
+                auc_input = nn.functional.softmax(logits, dim=1)
                 dur.append(time.time() - t0)
                 # if search:
                 #     print("Epoch {:05d} | Loss {:.4f} | train acc: {:.3f}| Time(s) {:.4f}".format(
