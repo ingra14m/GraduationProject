@@ -253,19 +253,19 @@ def main(g, event_num, output, device):
         delete_eids = indices[0:position]
         # g.remove_edges(delete_eids)
 
-        net = GAT(g, g,
-                  in_features=g.ndata['feature'].shape[1],
-                  hidden_features=1024,
-                  out_features=128,
-                  out_classes=event_num, delete_id=delete_eids)
+        # net = GAT(g, g,
+        #           in_features=g.ndata['feature'].shape[1],
+        #           hidden_features=1024,
+        #           out_features=128,
+        #           out_classes=event_num, delete_id=delete_eids)
 
-        # net = SAGEModel(g,
-        #                 g,
-        #                 in_features=g.ndata['feature'].shape[1],
-        #                 hidden_features=1024,
-        #                 out_features=128,
-        #                 out_classes=event_num,
-        #                 delete_id=delete_eids)
+        net = SAGEModel(g,
+                        g,
+                        in_features=g.ndata['feature'].shape[1],
+                        hidden_features=1024,
+                        out_features=128,
+                        out_classes=event_num,
+                        delete_id=delete_eids)
 
         # 2.训练，报告结果
         retrain_start = time.time()
