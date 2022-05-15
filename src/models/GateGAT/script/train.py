@@ -161,18 +161,15 @@ def train(g, net, output, device, search=True, eid=None):
 
             if search:
                 loss = F.cross_entropy(logits, labels)
-                train_acc = (
-                    result_pred[train_mask] == result_label[train_mask]).float().mean()
-                val_acc = (result_pred[val_mask] == result_label[val_mask]).float().mean()
-                test_acc = (
-                    result_pred[test_mask] == result_label[test_mask]).float().mean()
+                train_acc = accuracy_score(result_label[train_mask], result_pred[train_mask])
+                val_acc = accuracy_score(result_label[val_mask], result_pred[val_mask])
+                test_acc = accuracy_score(result_label[test_mask], result_pred[test_mask])
+
             else:
                 loss = F.cross_entropy(logits[train_mask], labels[train_mask])
-                train_acc = (
-                    result_pred[train_mask] == result_label[train_mask]).float().mean()
-                val_acc = (result_pred[val_mask] == result_label[val_mask]).float().mean()
-                test_acc = (
-                    result_pred[test_mask] == result_label[test_mask]).float().mean()
+                train_acc = accuracy_score(result_label[train_mask], result_pred[train_mask])
+                val_acc = accuracy_score(result_label[val_mask], result_pred[val_mask])
+                test_acc = accuracy_score(result_label[test_mask], result_pred[test_mask])
 
             if best_val_acc < val_acc:
                 best_val_acc = val_acc
