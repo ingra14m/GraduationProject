@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score, roc_auc_score
-import Function as MyF
+from .Function import GetLabel
 
 from dgl.data import citation_graph as citegrh
 
@@ -157,7 +157,7 @@ def train(g, net, output, device, search=True, eid=None):
                 logits = net(features)
             pred = logits.argmax(1)
 
-            result_label, result_pred = MyF.GetLabel(pred, labels)
+            result_label, result_pred = GetLabel(pred, labels)
 
             if search:
                 loss = F.cross_entropy(logits, labels)
@@ -206,7 +206,7 @@ def train(g, net, output, device, search=True, eid=None):
                     f1_score(result_label[val_mask], result_pred[val_mask], average='weighted'),
                     f1_score(result_label[test_mask], result_pred[test_mask], average='weighted'),
                     roc_auc_score(result_label, auc_input.cpu().data.numpy(), multi_class='ovr'))
-                
+
                 f.write(expLog + '\n')
                 f.write(quality + '\n')
 
