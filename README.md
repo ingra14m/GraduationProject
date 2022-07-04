@@ -28,6 +28,7 @@
 - data：存放本次工程的数据集
 - doc：放置文档说明
 - log：记录模型产生的结果
+- compare.py & ModelCompare.py都是用来测试用MacOS训练神经网络速度的脚本。其中使用到了taichi与pytorch刚推出的mps device训练框架
 
 
 
