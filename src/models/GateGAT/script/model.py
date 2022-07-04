@@ -97,7 +97,6 @@ class GateGATLayer(nn.Module):
     def reduce_func(self, nodes):
         # reduce UDF for equation (3) & (4)
         # equation (3)
-        # 这里，就是刘老师说的那种，把没有的边，就不要进 softmax 了
         alpha = F.softmax(nodes.mailbox['e'] * nodes.mailbox['score'], dim=1)
         h = torch.sum(alpha * nodes.mailbox['z'], dim=1)
         # ----------------------------分割线--------------------------
